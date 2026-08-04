@@ -9,5 +9,4 @@ public class ClickdropBackendApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(ClickdropBackendApplication.class, args);
 	}
-
 }
