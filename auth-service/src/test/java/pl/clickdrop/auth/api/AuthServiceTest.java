@@ -2,25 +2,31 @@ package pl.clickdrop.auth.api;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import pl.clickdrop.auth.api.dto.LoginRequest;
 import pl.clickdrop.auth.api.dto.LoginResponse;
+import pl.clickdrop.auth.api.dto.RegisterRequest;
+import pl.clickdrop.auth.api.dto.RegisterResponse;
 import pl.clickdrop.auth.application.AuthService;
+import pl.clickdrop.auth.application.exception.EmailAlreadyExistsException;
 import pl.clickdrop.auth.application.exception.InvalidCredentialsException;
+import pl.clickdrop.auth.application.exception.UsernameAlreadyExistsException;
 import pl.clickdrop.auth.application.security.JwtService;
 import pl.clickdrop.auth.domain.user.Role;
 import pl.clickdrop.auth.domain.user.User;
 import pl.clickdrop.auth.domain.user.UserRepository;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -61,10 +67,10 @@ class AuthServiceTest {
 
     @Test
     void login_throws_whenEmailUnknown() {
-        when(userRepository.findByEmail("brak@clickdrop.pl")).thenReturn(Optional.empty());
+        when(userRepository.findByEmail("unknown@clickdrop.pl")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() ->
-                authService.login(new LoginRequest("brak@clickdrop.pl", "Secret123!"))
+                authService.login(new LoginRequest("unknown@clickdrop.pl", "Secret123!"))
         ).isInstanceOf(InvalidCredentialsException.class);
 
         verifyNoInteractions(passwordEncoder, jwtService);
@@ -78,12 +84,81 @@ class AuthServiceTest {
         user.setRole(Role.USER);
 
         when(userRepository.findByEmail("test@clickdrop.pl")).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("zle", "$2a$10$hashed")).thenReturn(false);
+        when(passwordEncoder.matches("wrong", "$2a$10$hashed")).thenReturn(false);
 
         assertThatThrownBy(() ->
-                authService.login(new LoginRequest("test@clickdrop.pl", "zle"))
+                authService.login(new LoginRequest("test@clickdrop.pl", "wrong"))
         ).isInstanceOf(InvalidCredentialsException.class);
 
         verifyNoInteractions(jwtService);
+    }
+
+    @Test
+    void register_createsUser_whenDataValid() {
+        RegisterRequest request = new RegisterRequest(
+                "new@clickdrop.pl",
+                "newuser",
+                "Secret123!"
+        );
+
+        when(userRepository.existsByEmail("new@clickdrop.pl")).thenReturn(false);
+        when(userRepository.existsByUsername("newuser")).thenReturn(false);
+        when(passwordEncoder.encode("Secret123!")).thenReturn("$2a$10$hashed");
+
+        User saved = new User();
+        saved.setId(10L);
+        saved.setEmail("new@clickdrop.pl");
+        saved.setUsername("newuser");
+        saved.setPassword("$2a$10$hashed");
+        saved.setRole(Role.USER);
+
+        when(userRepository.save(any(User.class))).thenReturn(saved);
+
+        RegisterResponse response = authService.register(request);
+
+        assertThat(response.id()).isEqualTo(10L);
+        assertThat(response.email()).isEqualTo("new@clickdrop.pl");
+        assertThat(response.username()).isEqualTo("newuser");
+        assertThat(response.role()).isEqualTo(Role.USER);
+
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(captor.capture());
+
+        User toSave = captor.getValue();
+        assertThat(toSave.getEmail()).isEqualTo("new@clickdrop.pl");
+        assertThat(toSave.getUsername()).isEqualTo("newuser");
+        assertThat(toSave.getPassword()).isEqualTo("$2a$10$hashed");
+        assertThat(toSave.getRole()).isEqualTo(Role.USER);
+        assertThat(toSave.getExperience()).isZero();
+        assertThat(toSave.getLevel()).isEqualTo(1);
+        assertThat(toSave.getDollars()).isEqualByComparingTo(BigDecimal.ZERO);
+
+        verify(passwordEncoder).encode("Secret123!");
+        verifyNoInteractions(jwtService);
+    }
+
+    @Test
+    void register_throws_whenEmailExists() {
+        when(userRepository.existsByEmail("taken@clickdrop.pl")).thenReturn(true);
+
+        assertThatThrownBy(() ->
+                authService.register(new RegisterRequest("taken@clickdrop.pl", "user1", "Secret123!"))
+        ).isInstanceOf(EmailAlreadyExistsException.class);
+
+        verify(userRepository, never()).save(any());
+        verifyNoInteractions(passwordEncoder, jwtService);
+    }
+
+    @Test
+    void register_throws_whenUsernameExists() {
+        when(userRepository.existsByEmail("ok@clickdrop.pl")).thenReturn(false);
+        when(userRepository.existsByUsername("taken")).thenReturn(true);
+
+        assertThatThrownBy(() ->
+                authService.register(new RegisterRequest("ok@clickdrop.pl", "taken", "Secret123!"))
+        ).isInstanceOf(UsernameAlreadyExistsException.class);
+
+        verify(userRepository, never()).save(any());
+        verifyNoInteractions(passwordEncoder, jwtService);
     }
 }
