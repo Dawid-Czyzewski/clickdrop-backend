@@ -1,5 +1,6 @@
 package pl.clickdrop.auth.api;
 
+import jakarta.mail.MessagingException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -12,13 +13,17 @@ import pl.clickdrop.auth.api.dto.LoginResponse;
 import pl.clickdrop.auth.api.dto.RegisterRequest;
 import pl.clickdrop.auth.api.dto.RegisterResponse;
 import pl.clickdrop.auth.application.AuthService;
+import pl.clickdrop.auth.application.exception.AccountNotEnabledException;
 import pl.clickdrop.auth.application.exception.EmailAlreadyExistsException;
 import pl.clickdrop.auth.application.exception.InvalidCredentialsException;
 import pl.clickdrop.auth.application.exception.UsernameAlreadyExistsException;
+import pl.clickdrop.auth.application.mail.EmailService;
 import pl.clickdrop.auth.application.security.JwtService;
+import pl.clickdrop.auth.application.verification.EmailVerificationTokenService;
 import pl.clickdrop.auth.domain.user.Role;
 import pl.clickdrop.auth.domain.user.User;
 import pl.clickdrop.auth.domain.user.UserRepository;
+import pl.clickdrop.auth.domain.verification.EmailVerificationToken;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -40,8 +45,14 @@ class AuthServiceTest {
     @Mock
     JwtService jwtService;
 
+    @Mock
+    EmailVerificationTokenService emailVerificationTokenService;
+
     @InjectMocks
     AuthService authService;
+
+    @Mock
+    EmailService emailService;
 
     @Test
     void login_returnsUserAndToken_whenCredentialsValid() {
@@ -50,6 +61,7 @@ class AuthServiceTest {
         user.setEmail("test@clickdrop.pl");
         user.setPassword("$2a$10$hashed");
         user.setRole(Role.USER);
+        user.setEnabled(true);
 
         when(userRepository.findByEmail("test@clickdrop.pl")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("Secret123!", "$2a$10$hashed")).thenReturn(true);
@@ -94,7 +106,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void register_createsUser_whenDataValid() {
+    void register_createsUser_whenDataValid() throws MessagingException {
         RegisterRequest request = new RegisterRequest(
                 "new@clickdrop.pl",
                 "newuser",
@@ -113,6 +125,10 @@ class AuthServiceTest {
         saved.setRole(Role.USER);
 
         when(userRepository.save(any(User.class))).thenReturn(saved);
+
+        EmailVerificationToken verificationToken = new EmailVerificationToken();
+        verificationToken.setToken("activation-token");
+        when(emailVerificationTokenService.createFor(saved)).thenReturn(verificationToken);
 
         RegisterResponse response = authService.register(request);
 
@@ -133,8 +149,16 @@ class AuthServiceTest {
         assertThat(toSave.getLevel()).isEqualTo(1);
         assertThat(toSave.getDollars()).isEqualByComparingTo(BigDecimal.ZERO);
 
+        verify(emailVerificationTokenService).createFor(saved);
+
         verify(passwordEncoder).encode("Secret123!");
         verifyNoInteractions(jwtService);
+
+        verify(emailService).sendAccountActivation(
+                "new@clickdrop.pl",
+                "newuser",
+                "activation-token"
+        );
     }
 
     @Test
@@ -160,5 +184,47 @@ class AuthServiceTest {
 
         verify(userRepository, never()).save(any());
         verifyNoInteractions(passwordEncoder, jwtService);
+    }
+
+    @Test
+    void login_throws_whenAccountNotEnabled() {
+        User user = new User();
+        user.setEmail("test@clickdrop.pl");
+        user.setPassword("$2a$10$hashed");
+        user.setRole(Role.USER);
+        user.setEnabled(false);
+
+        when(userRepository.findByEmail("test@clickdrop.pl")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("Secret123!", "$2a$10$hashed")).thenReturn(true);
+
+        assertThatThrownBy(() ->
+                authService.login(new LoginRequest("test@clickdrop.pl", "Secret123!"))
+        ).isInstanceOf(AccountNotEnabledException.class);
+
+        verifyNoInteractions(jwtService);
+    }
+    @Test
+    void register_setsEnabledToFalse() throws MessagingException {
+        RegisterRequest request = new RegisterRequest(
+                "new@clickdrop.pl",
+                "newuser",
+                "Secret123!"
+        );
+
+        when(userRepository.existsByEmail("new@clickdrop.pl")).thenReturn(false);
+        when(userRepository.existsByUsername("newuser")).thenReturn(false);
+        when(passwordEncoder.encode("Secret123!")).thenReturn("$2a$10$hashed");
+
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User u = invocation.getArgument(0);
+            u.setId(10L);
+            return u;
+        });
+
+        authService.register(request);
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+
+        verify(userRepository).save(captor.capture());
+        assertThat(captor.getValue().isEnabled()).isFalse();
     }
 }

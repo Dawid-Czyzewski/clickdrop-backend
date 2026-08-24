@@ -30,6 +30,9 @@ public class User {
     @Column(nullable = false, length = 50)
     private String username;
 
+    @Column(nullable = false)
+    private boolean enabled = false;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
     private Role role;

@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import pl.clickdrop.auth.application.exception.AccountNotEnabledException;
 import pl.clickdrop.auth.application.exception.EmailAlreadyExistsException;
 import pl.clickdrop.auth.application.exception.InvalidCredentialsException;
 import pl.clickdrop.auth.application.exception.UsernameAlreadyExistsException;
@@ -36,5 +37,12 @@ public class GlobalExceptionHandler {
     ) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(Map.of("message", "Username already in use"));
+    }
+
+    @ExceptionHandler(AccountNotEnabledException.class)
+    public ResponseEntity<Map<String, String>> handleNotEnabled(AccountNotEnabledException ex) {
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(Map.of("message", "Account is not verified. Please confirm your email"));
     }
 }

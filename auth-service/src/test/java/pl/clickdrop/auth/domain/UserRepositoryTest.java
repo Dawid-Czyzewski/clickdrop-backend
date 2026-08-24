@@ -1,9 +1,12 @@
-package pl.clickdrop.auth.domain.user;
+package pl.clickdrop.auth.domain;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import pl.clickdrop.auth.domain.user.Role;
+import pl.clickdrop.auth.domain.user.User;
+import pl.clickdrop.auth.domain.user.UserRepository;
 
 import java.math.BigDecimal;
 
