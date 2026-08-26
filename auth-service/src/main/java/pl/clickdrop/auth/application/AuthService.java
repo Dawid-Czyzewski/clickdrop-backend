@@ -4,14 +4,8 @@ import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import pl.clickdrop.auth.api.dto.LoginRequest;
-import pl.clickdrop.auth.api.dto.LoginResponse;
-import pl.clickdrop.auth.api.dto.RegisterRequest;
-import pl.clickdrop.auth.api.dto.RegisterResponse;
-import pl.clickdrop.auth.application.exception.AccountNotEnabledException;
-import pl.clickdrop.auth.application.exception.EmailAlreadyExistsException;
-import pl.clickdrop.auth.application.exception.InvalidCredentialsException;
-import pl.clickdrop.auth.application.exception.UsernameAlreadyExistsException;
+import pl.clickdrop.auth.api.dto.*;
+import pl.clickdrop.auth.application.exception.*;
 import pl.clickdrop.auth.application.mail.EmailService;
 import pl.clickdrop.auth.application.security.JwtService;
 import pl.clickdrop.auth.application.verification.EmailVerificationTokenService;
@@ -78,5 +72,27 @@ public class AuthService {
         );
 
         return new RegisterResponse(saved.getId(), saved.getEmail(), saved.getUsername(), saved.getRole());
+    }
+
+    public void verifyEmail(String token) {
+        emailVerificationTokenService.verify(token);
+    }
+
+    public void resendVerification(ResendVerificationRequest request) throws MessagingException {
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(UserNotFoundException::new);
+
+        if (user.isEnabled()) {
+            throw new AccountAlreadyVerifiedException();
+        }
+
+        emailVerificationTokenService.invalidateActiveTokens(user);
+        EmailVerificationToken token = emailVerificationTokenService.createFor(user);
+
+        emailService.sendAccountActivation(
+                user.getEmail(),
+                user.getUsername(),
+                token.getToken()
+        );
     }
 }

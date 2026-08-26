@@ -8,15 +8,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import pl.clickdrop.auth.api.dto.LoginRequest;
-import pl.clickdrop.auth.api.dto.LoginResponse;
-import pl.clickdrop.auth.api.dto.RegisterRequest;
-import pl.clickdrop.auth.api.dto.RegisterResponse;
+import pl.clickdrop.auth.api.dto.*;
 import pl.clickdrop.auth.application.AuthService;
-import pl.clickdrop.auth.application.exception.AccountNotEnabledException;
-import pl.clickdrop.auth.application.exception.EmailAlreadyExistsException;
-import pl.clickdrop.auth.application.exception.InvalidCredentialsException;
-import pl.clickdrop.auth.application.exception.UsernameAlreadyExistsException;
+import pl.clickdrop.auth.application.exception.*;
 import pl.clickdrop.auth.application.mail.EmailService;
 import pl.clickdrop.auth.application.security.JwtService;
 import pl.clickdrop.auth.application.verification.EmailVerificationTokenService;
@@ -226,5 +220,52 @@ class AuthServiceTest {
 
         verify(userRepository).save(captor.capture());
         assertThat(captor.getValue().isEnabled()).isFalse();
+    }
+
+    @Test
+    void resendVerification_invalidatesOldToken_andSendsMail() throws Exception {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("user@clickdrop.pl");
+        user.setUsername("user");
+        user.setEnabled(false);
+
+        EmailVerificationToken newToken = new EmailVerificationToken();
+        newToken.setToken("new-token");
+
+        when(userRepository.findByEmail("user@clickdrop.pl")).thenReturn(Optional.of(user));
+        when(emailVerificationTokenService.createFor(user)).thenReturn(newToken);
+
+        authService.resendVerification(new ResendVerificationRequest("user@clickdrop.pl"));
+
+        verify(emailVerificationTokenService).invalidateActiveTokens(user);
+        verify(emailVerificationTokenService).createFor(user);
+        verify(emailService).sendAccountActivation("user@clickdrop.pl", "user", "new-token");
+    }
+
+    @Test
+    void resendVerification_throws_whenUserMissing() {
+        when(userRepository.findByEmail("missing@clickdrop.pl")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                authService.resendVerification(new ResendVerificationRequest("missing@clickdrop.pl"))
+        ).isInstanceOf(UserNotFoundException.class);
+
+        verifyNoInteractions(emailVerificationTokenService, emailService);
+    }
+
+    @Test
+    void resendVerification_throws_whenAlreadyVerified() {
+        User user = new User();
+        user.setEmail("user@clickdrop.pl");
+        user.setEnabled(true);
+
+        when(userRepository.findByEmail("user@clickdrop.pl")).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() ->
+                authService.resendVerification(new ResendVerificationRequest("user@clickdrop.pl"))
+        ).isInstanceOf(AccountAlreadyVerifiedException.class);
+
+        verifyNoInteractions(emailVerificationTokenService, emailService);
     }
 }

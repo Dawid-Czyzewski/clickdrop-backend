@@ -4,10 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import pl.clickdrop.auth.application.exception.AccountNotEnabledException;
-import pl.clickdrop.auth.application.exception.EmailAlreadyExistsException;
-import pl.clickdrop.auth.application.exception.InvalidCredentialsException;
-import pl.clickdrop.auth.application.exception.UsernameAlreadyExistsException;
+import pl.clickdrop.auth.application.exception.*;
 
 import java.util.Map;
 
@@ -44,5 +41,33 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
                 .body(Map.of("message", "Account is not verified. Please confirm your email"));
+    }
+
+    @ExceptionHandler(InvalidVerificationTokenException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidToken(InvalidVerificationTokenException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("message", "Invalid verification token"));
+    }
+
+    @ExceptionHandler(ExpiredVerificationTokenException.class)
+    public ResponseEntity<Map<String, String>> handleExpiredToken(ExpiredVerificationTokenException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("message", "Verification token is Expired"));
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleUserNotFound(UserNotFoundException ex) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(Map.of("message", "User not found"));
+    }
+
+    @ExceptionHandler(AccountAlreadyVerifiedException.class)
+    public ResponseEntity<Map<String, String>> handleAlreadyVerified(AccountAlreadyVerifiedException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("message", "Account already verified"));
     }
 }

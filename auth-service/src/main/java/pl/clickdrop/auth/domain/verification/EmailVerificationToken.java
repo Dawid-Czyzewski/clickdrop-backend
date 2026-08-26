@@ -26,13 +26,24 @@ public class EmailVerificationToken {
     @Column(name = "expiration_date", nullable = false)
     private Instant expirationDate;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+
+    @Column(name = "used_at")
+    private Instant usedAt;
 
     @PrePersist
     void onCreate() {
         if (createdAt == null) {
             createdAt = Instant.now();
         }
+    }
+
+    public boolean isUsed() {
+        return usedAt != null;
+    }
+
+    public boolean isExpired() {
+        return Instant.now().isAfter(expirationDate);
     }
 }
