@@ -37,7 +37,12 @@ public class EmailVerificationTokenService {
         EmailVerificationToken token = repository.findByToken(rawToken)
                 .orElseThrow(InvalidVerificationTokenException::new);
 
+        User user = token.getUser();
+        
         if (token.isUsed()) {
+            if (user.isEnabled()) {
+                return;
+            }
             throw new InvalidVerificationTokenException();
         }
 
@@ -45,7 +50,6 @@ public class EmailVerificationTokenService {
             throw new ExpiredVerificationTokenException();
         }
 
-        User user = token.getUser();
         user.setEnabled(true);
         userRepository.save(user);
 

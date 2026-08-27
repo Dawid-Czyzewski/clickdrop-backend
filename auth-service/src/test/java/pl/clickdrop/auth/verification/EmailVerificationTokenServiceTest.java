@@ -124,6 +124,25 @@ class EmailVerificationTokenServiceTest {
     }
 
     @Test
+    void verify_isIdempotent_whenTokenUsedAndUserAlreadyEnabled() {
+        User user = new User();
+        user.setEnabled(true);
+
+        EmailVerificationToken token = new EmailVerificationToken();
+        token.setToken("used-enabled-token");
+        token.setUser(user);
+        token.setExpirationDate(Instant.now().plus(1, ChronoUnit.HOURS));
+        token.setUsedAt(Instant.now().minus(1, ChronoUnit.MINUTES));
+
+        when(repository.findByToken("used-enabled-token")).thenReturn(Optional.of(token));
+
+        service.verify("used-enabled-token");
+
+        verify(userRepository, never()).save(any());
+        verify(repository, never()).save(any());
+    }
+
+    @Test
     void verify_throws_whenTokenExpired() {
         User user = new User();
         user.setEnabled(false);
