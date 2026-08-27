@@ -1,6 +1,5 @@
 package pl.clickdrop.auth.application.mail;
 
-
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +10,8 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +27,7 @@ public class EmailService {
     private String frontendBaseUrl;
 
     public void sendAccountActivation(String toEmail, String username, String rawToken) throws MessagingException {
-        String activationLink = frontendBaseUrl + "verify-email?token=" + rawToken;
+        String activationLink = buildActivationLink(rawToken);
 
         Context ctx = new Context();
         ctx.setVariable("username", username);
@@ -42,5 +43,11 @@ public class EmailService {
         helper.setText(html, true);
 
         mailSender.send(message);
+    }
+
+    public String buildActivationLink(String rawToken) {
+        String base = frontendBaseUrl.endsWith("/") ? frontendBaseUrl : frontendBaseUrl + "/";
+        String encodedToken = URLEncoder.encode(rawToken, StandardCharsets.UTF_8);
+        return base + "verify-email?token=" + encodedToken;
     }
 }

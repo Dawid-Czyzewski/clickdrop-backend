@@ -14,6 +14,7 @@ import pl.clickdrop.auth.application.mail.EmailService;
 
 import java.util.Properties;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -47,5 +48,14 @@ class EmailServiceTest {
 
         verify(mailSender).send(mimeMessage);
         verify(templateEngine).process(eq("mail/account-activation"), any());
+    }
+
+    @Test
+    void buildActivationLink_addsSlashAndEncodesToken() {
+        ReflectionTestUtils.setField(emailService, "frontendBaseUrl", "http://localhost:5173");
+
+        String link = emailService.buildActivationLink("abc+123/x");
+
+        assertThat(link).isEqualTo("http://localhost:5173/verify-email?token=abc%2B123%2Fx");
     }
 }
