@@ -1,6 +1,7 @@
 package pl.clickdrop.auth.application;
 
 import jakarta.mail.MessagingException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -8,7 +9,9 @@ import pl.clickdrop.auth.api.dto.*;
 import pl.clickdrop.auth.application.exception.*;
 import pl.clickdrop.auth.application.mail.EmailService;
 import pl.clickdrop.auth.application.security.JwtService;
+import pl.clickdrop.auth.application.security.RefreshTokenService;
 import pl.clickdrop.auth.application.verification.EmailVerificationTokenService;
+import pl.clickdrop.auth.domain.token.RefreshToken;
 import pl.clickdrop.auth.domain.user.Role;
 import pl.clickdrop.auth.domain.user.User;
 import pl.clickdrop.auth.domain.user.UserRepository;
@@ -25,6 +28,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final EmailVerificationTokenService emailVerificationTokenService;
     private final EmailService emailService;
+    private final RefreshTokenService refreshTokenService;
 
     public LoginResponse login(LoginRequest loginRequest) {
         User user = userRepository.findByEmail(loginRequest.email()).
@@ -38,9 +42,16 @@ public class AuthService {
             throw new AccountNotEnabledException();
         }
 
-        String token = jwtService.generateToken(user);
+        String accessToken = jwtService.generateToken(user);
+        RefreshToken refreshToken = refreshTokenService.createFor(user);
 
-        return new LoginResponse(user.getId(), user.getEmail(), user.getRole(), token);
+        return new LoginResponse(
+                user.getId(),
+                user.getEmail(),
+                user.getRole(),
+                accessToken,
+                refreshToken.getToken()
+        );
     }
 
     public RegisterResponse register(RegisterRequest request) throws MessagingException {
@@ -94,5 +105,21 @@ public class AuthService {
                 user.getUsername(),
                 token.getToken()
         );
+    }
+
+    @Transactional
+    public TokenResponse refresh(RefreshTokenRequest request) {
+        RefreshToken existing = refreshTokenService.verify(request.refreshToken());
+        User user = existing.getUser();
+
+        refreshTokenService.revoke(request.refreshToken());
+        RefreshToken newRefresh = refreshTokenService.createFor(user);
+        String accessToken = jwtService.generateToken(user);
+
+        return new TokenResponse(accessToken, newRefresh.getToken());
+    }
+
+    public void revokeRefreshToken(RefreshTokenRequest request) {
+        refreshTokenService.revoke(request.refreshToken());
     }
 }

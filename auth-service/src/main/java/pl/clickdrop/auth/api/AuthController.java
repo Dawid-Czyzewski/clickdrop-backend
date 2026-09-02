@@ -42,4 +42,18 @@ public class AuthController {
         authService.resendVerification(request);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<TokenResponse> refresh(
+            @Valid @RequestBody RefreshTokenRequest request
+    ) {
+        return ResponseEntity.ok(authService.refresh(request));
+    }
+
+    public ResponseEntity<Void> logout(
+        @Valid @RequestBody RefreshTokenRequest request
+    ) {
+        authService.revokeRefreshToken(request);
+        return  ResponseEntity.noContent().build();
+    }
 }
