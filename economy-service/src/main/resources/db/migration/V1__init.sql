@@ -1,4 +1,4 @@
-CREATE TABLE wallets (
+CREATE TABLE wallet (
     id           BIGSERIAL PRIMARY KEY,
     user_id      BIGINT         NOT NULL,
     balance      NUMERIC(19, 2) NOT NULL DEFAULT 0,
