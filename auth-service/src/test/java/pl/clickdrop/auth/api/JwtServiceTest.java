@@ -17,6 +17,7 @@ class JwtServiceTest {
     void setUp() {
         JwtProperties props = new JwtProperties(
                 "testtesttesttestetsteststetstestest",
+                3_600_000L,
                 3_600_000L
         );
         jwtService = new JwtService(props);
