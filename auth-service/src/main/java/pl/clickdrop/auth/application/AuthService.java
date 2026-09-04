@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import pl.clickdrop.auth.api.dto.*;
+import pl.clickdrop.auth.application.client.EconomyClient;
 import pl.clickdrop.auth.application.exception.*;
 import pl.clickdrop.auth.application.mail.EmailService;
 import pl.clickdrop.auth.application.security.JwtService;
@@ -29,6 +30,7 @@ public class AuthService {
     private final EmailVerificationTokenService emailVerificationTokenService;
     private final EmailService emailService;
     private final RefreshTokenService refreshTokenService;
+    private final EconomyClient economyClient;
 
     public LoginResponse login(LoginRequest loginRequest) {
         User user = userRepository.findByEmail(loginRequest.email()).
@@ -74,6 +76,9 @@ public class AuthService {
         user.setExperience(0);
 
         User saved = userRepository.save(user);
+
+        economyClient.createWallet(saved.getId());
+
         EmailVerificationToken verificationToken = emailVerificationTokenService.createFor(saved);
 
         emailService.sendAccountActivation(
