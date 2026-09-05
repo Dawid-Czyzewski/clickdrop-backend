@@ -9,10 +9,9 @@ import org.springframework.web.client.RestClient;
 public class EconomyClientConfig {
 
     @Bean
-    RestClient economyRestClient(
-            @Value("${app.economy.base-url}") String baseUri,
-            RestClient.Builder builder
-    ) {
-        return builder.baseUrl(baseUri).build();
+    RestClient economyRestClient(@Value("${app.economy.base-url}") String baseUri) {
+        return RestClient.builder()
+                .baseUrl(baseUri)
+                .build();
     }
 }
