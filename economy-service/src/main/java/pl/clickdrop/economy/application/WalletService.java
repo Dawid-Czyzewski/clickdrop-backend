@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 public class WalletService {
 
+    private static final BigDecimal CLICK_REWARD = BigDecimal.ONE;
     private final WalletRepository repository;
 
     @Transactional
@@ -34,5 +35,16 @@ public class WalletService {
         return repository.findByUserId(userId)
                 .map(Wallet::getBalance)
                 .orElseThrow(() -> new WalletNotFoundException(userId));
+    }
+
+    @Transactional
+    public ClickResult clickForUser(Long userId) {
+        Wallet wallet = repository.findByUserId(userId)
+                .orElseThrow(() -> new WalletNotFoundException(userId));
+
+        wallet.setBalance(wallet.getBalance().add(CLICK_REWARD));
+        Wallet saved = repository.save(wallet);
+
+        return new ClickResult(saved.getBalance(), CLICK_REWARD);
     }
 }

@@ -79,4 +79,32 @@ class WalletServiceTest {
         assertThatThrownBy(() -> walletService.getBalanceForUser(42L))
                 .isInstanceOf(WalletNotFoundException.class);
     }
+
+    @Test
+    void clickForUser_addsOneAndReturnsNewBalance() {
+        Wallet wallet = new Wallet();
+        wallet.setId(1L);
+        wallet.setUserId(42L);
+        wallet.setBalance(BigDecimal.ZERO);
+
+        when(repository.findByUserId(42L)).thenReturn(Optional.of(wallet));
+        when(repository.save(any(Wallet.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ClickResult result = walletService.clickForUser(42L);
+
+        assertThat(result.earned()).isEqualByComparingTo(BigDecimal.ONE);
+        assertThat(result.balance()).isEqualByComparingTo(BigDecimal.ONE);
+        assertThat(wallet.getBalance()).isEqualByComparingTo(BigDecimal.ONE);
+        verify(repository).save(wallet);
+    }
+
+    @Test
+    void clickForUser_throws_whenWalletMissing() {
+        when(repository.findByUserId(42L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> walletService.clickForUser(42L))
+                .isInstanceOf(WalletNotFoundException.class);
+
+        verify(repository, never()).save(any());
+    }
 }
