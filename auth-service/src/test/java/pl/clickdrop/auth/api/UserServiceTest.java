@@ -11,7 +11,6 @@ import pl.clickdrop.auth.application.exception.UserNotFoundException;
 import pl.clickdrop.auth.domain.user.User;
 import pl.clickdrop.auth.domain.user.UserRepository;
 
-import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,7 +33,6 @@ class UserServiceTest {
         user.setEmail("player@clickdrop.pl");
         user.setLevel(5);
         user.setExperience(1200);
-        user.setDollars(new BigDecimal("99.50"));
 
         when(userRepository.findByEmail("player@clickdrop.pl")).thenReturn(Optional.of(user));
 
@@ -44,7 +42,6 @@ class UserServiceTest {
         assertThat(response.email()).isEqualTo("player@clickdrop.pl");
         assertThat(response.level()).isEqualTo(5);
         assertThat(response.experience()).isEqualTo(1200);
-        assertThat(response.clickDollars()).isEqualByComparingTo("99.50");
     }
 
     @Test

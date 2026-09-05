@@ -22,7 +22,6 @@ import pl.clickdrop.auth.domain.user.User;
 import pl.clickdrop.auth.domain.user.UserRepository;
 import pl.clickdrop.auth.domain.verification.EmailVerificationToken;
 
-import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -176,7 +175,6 @@ class AuthServiceTest {
         assertThat(toSave.getRole()).isEqualTo(Role.USER);
         assertThat(toSave.getExperience()).isZero();
         assertThat(toSave.getLevel()).isEqualTo(1);
-        assertThat(toSave.getDollars()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(toSave.isEnabled()).isFalse();
 
         verify(economyClient).createWallet(10L);

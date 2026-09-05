@@ -26,8 +26,7 @@ public class UserService {
                 user.getUsername(),
                 user.getEmail(),
                 user.getLevel(),
-                user.getExperience(),
-                user.getDollars()
+                user.getExperience()
         );
     }
 }

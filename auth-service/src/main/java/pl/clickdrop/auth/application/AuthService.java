@@ -70,7 +70,6 @@ public class AuthService {
         user.setUsername(request.username());
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setRole(Role.USER);
-        user.setDollars(BigDecimal.ZERO);
         user.setLevel(1);
         user.setEnabled(false);
         user.setExperience(0);

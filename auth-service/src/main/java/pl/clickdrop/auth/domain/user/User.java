@@ -3,7 +3,6 @@ package pl.clickdrop.auth.domain.user;
 import jakarta.persistence.*;
 import lombok.Data;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 
 @Data
@@ -42,9 +41,6 @@ public class User {
 
     @Column(nullable = false)
     private Integer level = 1;
-
-    @Column(nullable = false, precision = 19, scale = 2)
-    private BigDecimal dollars = BigDecimal.ZERO;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

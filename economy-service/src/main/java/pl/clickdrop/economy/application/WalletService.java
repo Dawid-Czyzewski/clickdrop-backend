@@ -4,6 +4,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pl.clickdrop.economy.application.exception.WalletAlreadyExistsException;
+import pl.clickdrop.economy.application.exception.WalletNotFoundException;
 import pl.clickdrop.economy.domain.wallet.Wallet;
 import pl.clickdrop.economy.domain.wallet.WalletRepository;
 
@@ -26,5 +27,12 @@ public class WalletService {
         wallet.setBalance(BigDecimal.ZERO);
 
         return repository.save(wallet);
+    }
+
+    @Transactional
+    public BigDecimal getBalanceForUser(Long userId) {
+        return repository.findByUserId(userId)
+                .map(Wallet::getBalance)
+                .orElseThrow(() -> new WalletNotFoundException(userId));
     }
 }

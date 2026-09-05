@@ -7,10 +7,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import pl.clickdrop.economy.application.exception.WalletAlreadyExistsException;
+import pl.clickdrop.economy.application.exception.WalletNotFoundException;
 import pl.clickdrop.economy.domain.wallet.Wallet;
 import pl.clickdrop.economy.domain.wallet.WalletRepository;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -56,5 +58,25 @@ class WalletServiceTest {
                 .isInstanceOf(WalletAlreadyExistsException.class);
 
         verify(repository, never()).save(any());
+    }
+
+    @Test
+    void getBalanceForUser_returnsBalance() {
+        Wallet wallet = new Wallet();
+        wallet.setUserId(42L);
+        wallet.setBalance(new BigDecimal("12.50"));
+        when(repository.findByUserId(42L)).thenReturn(Optional.of(wallet));
+
+        BigDecimal balance = walletService.getBalanceForUser(42L);
+
+        assertThat(balance).isEqualByComparingTo("12.50");
+    }
+
+    @Test
+    void getBalanceForUser_throws_whenWalletMissing() {
+        when(repository.findByUserId(42L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> walletService.getBalanceForUser(42L))
+                .isInstanceOf(WalletNotFoundException.class);
     }
 }
