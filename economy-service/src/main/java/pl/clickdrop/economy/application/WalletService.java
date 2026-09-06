@@ -14,9 +14,9 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 public class WalletService {
 
-    private static final BigDecimal CLICK_REWARD = BigDecimal.ONE;
     private final WalletRepository repository;
     private final ClickRateLimiter clickRateLimiter;
+    private final ClickRewardService clickRewardService;
 
     @Transactional
     public Wallet createWalletForUser(Long userId) {
@@ -42,12 +42,14 @@ public class WalletService {
     public ClickResult clickForUser(Long userId) {
         clickRateLimiter.check(userId);
 
+        BigDecimal earned = clickRewardService.calculateReward(userId);
+
         Wallet wallet = repository.findByUserId(userId)
                 .orElseThrow(() -> new WalletNotFoundException(userId));
 
-        wallet.setBalance(wallet.getBalance().add(CLICK_REWARD));
+        wallet.setBalance(wallet.getBalance().add(earned));
         Wallet saved = repository.save(wallet);
 
-        return new ClickResult(saved.getBalance(), CLICK_REWARD);
+        return new ClickResult(saved.getBalance(), earned);
     }
 }

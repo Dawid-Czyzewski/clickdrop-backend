@@ -32,6 +32,9 @@ class WalletServiceTest {
     @Mock
     ClickRateLimiter clickRateLimiter;
 
+    @Mock
+    ClickRewardService clickRewardService;
+
     @Test
     void createWalletForUser_createsWallet_withZeroBalance() {
         when(repository.existsByUserId(42L)).thenReturn(false);
@@ -119,5 +122,20 @@ class WalletServiceTest {
 
         verify(repository, never()).findByUserId(any());
         verify(repository, never()).save(any());
+    }
+
+    @Test
+    void clickForUser_addsCalculatedReward() {
+        Wallet wallet = new Wallet();
+        wallet.setId(1L);
+        wallet.setUserId(42L);
+        wallet.setBalance(BigDecimal.ZERO);
+        when(clickRewardService.calculateReward(42L)).thenReturn(new BigDecimal("2"));
+        when(repository.findByUserId(42L)).thenReturn(Optional.of(wallet));
+        when(repository.save(any(Wallet.class))).thenAnswer(inv -> inv.getArgument(0));
+        ClickResult result = walletService.clickForUser(42L);
+        assertThat(result.earned()).isEqualByComparingTo("2");
+        assertThat(result.balance()).isEqualByComparingTo("2");
+        verify(clickRewardService).calculateReward(42L);
     }
 }
