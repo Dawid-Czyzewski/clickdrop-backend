@@ -6,6 +6,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import pl.clickdrop.economy.application.exception.ClickRateLimitException;
 import pl.clickdrop.economy.application.exception.WalletAlreadyExistsException;
 import pl.clickdrop.economy.application.exception.WalletNotFoundException;
 import pl.clickdrop.economy.domain.wallet.Wallet;
@@ -17,9 +18,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class WalletServiceTest {
@@ -29,6 +28,9 @@ class WalletServiceTest {
 
     @InjectMocks
     WalletService walletService;
+
+    @Mock
+    ClickRateLimiter clickRateLimiter;
 
     @Test
     void createWalletForUser_createsWallet_withZeroBalance() {
@@ -105,6 +107,17 @@ class WalletServiceTest {
         assertThatThrownBy(() -> walletService.clickForUser(42L))
                 .isInstanceOf(WalletNotFoundException.class);
 
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void clickForUser_doesNotSave_whenRateLimited() {
+        doThrow(new ClickRateLimitException()).when(clickRateLimiter).check(42L);
+
+        assertThatThrownBy(() -> walletService.clickForUser(42L))
+                .isInstanceOf(ClickRateLimitException.class);
+
+        verify(repository, never()).findByUserId(any());
         verify(repository, never()).save(any());
     }
 }

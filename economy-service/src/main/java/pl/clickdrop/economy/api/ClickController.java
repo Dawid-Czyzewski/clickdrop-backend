@@ -1,4 +1,4 @@
-package pl.clickdrop.economy;
+package pl.clickdrop.economy.api;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

@@ -16,6 +16,7 @@ public class WalletService {
 
     private static final BigDecimal CLICK_REWARD = BigDecimal.ONE;
     private final WalletRepository repository;
+    private final ClickRateLimiter clickRateLimiter;
 
     @Transactional
     public Wallet createWalletForUser(Long userId) {
@@ -39,6 +40,8 @@ public class WalletService {
 
     @Transactional
     public ClickResult clickForUser(Long userId) {
+        clickRateLimiter.check(userId);
+
         Wallet wallet = repository.findByUserId(userId)
                 .orElseThrow(() -> new WalletNotFoundException(userId));
 

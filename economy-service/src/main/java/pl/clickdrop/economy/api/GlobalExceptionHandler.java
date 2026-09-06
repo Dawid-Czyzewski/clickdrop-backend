@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import pl.clickdrop.economy.application.exception.ClickRateLimitException;
 import pl.clickdrop.economy.application.exception.WalletAlreadyExistsException;
 import pl.clickdrop.economy.application.exception.WalletNotFoundException;
 
@@ -21,6 +22,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(WalletNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleNotFound(WalletNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(ClickRateLimitException.class)
+    public ResponseEntity<Map<String, String>> handleRateLimit(ClickRateLimitException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .body(Map.of("message", ex.getMessage()));
     }
 }
