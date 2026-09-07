@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import pl.clickdrop.economy.api.dto.BuyUpgradeResponse;
+import pl.clickdrop.economy.api.dto.MyUpgradeResponse;
 import pl.clickdrop.economy.api.dto.UpgradeResponse;
 import pl.clickdrop.economy.application.UpgradePurchaseService;
 import pl.clickdrop.economy.application.UpgradeService;
@@ -24,12 +25,18 @@ public class UpgradeController {
         return  ResponseEntity.ok(upgradeService.listActive());
     }
 
-    @PostMapping("/{upgradeId/buy}")
+    @PostMapping("/{upgradeId}/buy")
     public ResponseEntity<BuyUpgradeResponse> buy(
             Authentication authentication,
             @PathVariable Long upgradeId
     ) {
         Long userId = (Long) authentication.getPrincipal();
         return ResponseEntity.ok(upgradePurchaseService.buy(userId, upgradeId));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<List<MyUpgradeResponse>> me(Authentication authentication) {
+        Long userId = (Long )authentication.getPrincipal();
+        return  ResponseEntity.ok(upgradeService.listMine(userId));
     }
 }
