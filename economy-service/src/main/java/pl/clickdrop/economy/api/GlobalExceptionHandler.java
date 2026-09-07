@@ -4,9 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import pl.clickdrop.economy.application.exception.ClickRateLimitException;
-import pl.clickdrop.economy.application.exception.WalletAlreadyExistsException;
-import pl.clickdrop.economy.application.exception.WalletNotFoundException;
+import pl.clickdrop.economy.application.exception.*;
 
 import java.util.Map;
 
@@ -28,6 +26,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ClickRateLimitException.class)
     public ResponseEntity<Map<String, String>> handleRateLimit(ClickRateLimitException ex) {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(UpgradeNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleUpgradeNotFound(UpgradeNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(InsufficientFundsException.class)
+    public ResponseEntity<Map<String, String>> handleInsufficientFunds(InsufficientFundsException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("message", ex.getMessage()));
     }
 }
