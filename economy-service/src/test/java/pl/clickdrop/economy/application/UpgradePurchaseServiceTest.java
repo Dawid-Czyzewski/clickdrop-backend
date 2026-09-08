@@ -26,15 +26,20 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class UpgradePurchaseServiceTest {
 
-    @Mock UpgradeRepository upgradeRepository;
-    @Mock UserUpgradeRepository userUpgradeRepository;
-    @Mock WalletRepository walletRepository;
+    @Mock
+    UpgradeRepository upgradeRepository;
+
+    @Mock
+    UserUpgradeRepository userUpgradeRepository;
+
+    @Mock
+    WalletRepository walletRepository;
 
     @InjectMocks
     UpgradePurchaseService purchaseService;
 
     @Test
-    void buy_firstTime_createsLevel1_andChargesPrice() {
+    void buy_firstTime_createsLevel1_andChargesBasePrice() {
         Upgrade catalog = catalog(1L, "BETTER_MOUSE", "50");
         Wallet wallet = wallet(15L, "100");
 
@@ -54,9 +59,28 @@ class UpgradePurchaseServiceTest {
     }
 
     @Test
-    void buy_existing_incrementsLevel() {
+    void buy_atLevel1_chargesDoubleBasePrice() {
         Upgrade catalog = catalog(1L, "BETTER_MOUSE", "50");
-        Wallet wallet = wallet(15L, "100");
+        Wallet wallet = wallet(15L, "150");
+        UserUpgrade owned = userUpgrade(15L, 1L, 1);
+
+        when(upgradeRepository.findById(1L)).thenReturn(Optional.of(catalog));
+        when(walletRepository.findByUserId(15L)).thenReturn(Optional.of(wallet));
+        when(userUpgradeRepository.findByUserIdAndUpgradeId(15L, 1L)).thenReturn(Optional.of(owned));
+        when(walletRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(userUpgradeRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        BuyUpgradeResponse res = purchaseService.buy(15L, 1L);
+
+        assertThat(res.level()).isEqualTo(2);
+        assertThat(res.cost()).isEqualByComparingTo("100");
+        assertThat(res.balance()).isEqualByComparingTo("50");
+    }
+
+    @Test
+    void buy_atLevel2_chargesTripleBasePrice_andIncrementsLevel() {
+        Upgrade catalog = catalog(1L, "BETTER_MOUSE", "50");
+        Wallet wallet = wallet(15L, "200");
         UserUpgrade owned = userUpgrade(15L, 1L, 2);
 
         when(upgradeRepository.findById(1L)).thenReturn(Optional.of(catalog));
@@ -68,11 +92,12 @@ class UpgradePurchaseServiceTest {
         BuyUpgradeResponse res = purchaseService.buy(15L, 1L);
 
         assertThat(res.level()).isEqualTo(3);
+        assertThat(res.cost()).isEqualByComparingTo("150");
         assertThat(res.balance()).isEqualByComparingTo("50");
     }
 
     @Test
-    void buy_throws_whenInsufficientFunds_andDoesNotSave() {
+    void buy_throws_whenInsufficientFunds_atLevel0_andDoesNotSave() {
         Upgrade catalog = catalog(1L, "BETTER_MOUSE", "50");
         Wallet wallet = wallet(15L, "10");
 
@@ -86,6 +111,25 @@ class UpgradePurchaseServiceTest {
         verify(walletRepository, never()).save(any());
         verify(userUpgradeRepository, never()).save(any());
         assertThat(wallet.getBalance()).isEqualByComparingTo("10");
+    }
+
+    @Test
+    void buy_throws_whenInsufficientFunds_atLevel1_scaledCost() {
+        Upgrade catalog = catalog(1L, "BETTER_MOUSE", "50");
+        Wallet wallet = wallet(15L, "50");
+        UserUpgrade owned = userUpgrade(15L, 1L, 1);
+
+        when(upgradeRepository.findById(1L)).thenReturn(Optional.of(catalog));
+        when(walletRepository.findByUserId(15L)).thenReturn(Optional.of(wallet));
+        when(userUpgradeRepository.findByUserIdAndUpgradeId(15L, 1L)).thenReturn(Optional.of(owned));
+
+        assertThatThrownBy(() -> purchaseService.buy(15L, 1L))
+                .isInstanceOf(InsufficientFundsException.class);
+
+        verify(walletRepository, never()).save(any());
+        verify(userUpgradeRepository, never()).save(any());
+        assertThat(owned.getLevel()).isEqualTo(1);
+        assertThat(wallet.getBalance()).isEqualByComparingTo("50");
     }
 
     @Test

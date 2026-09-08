@@ -64,7 +64,7 @@ public class UpgradeService {
                 u.getPrice(),
                 u.getClickPower(),
                 level,
-                u.getPrice()
+                UpgradePricing.nextCost(u.getPrice(), level)
         );
     }
 }

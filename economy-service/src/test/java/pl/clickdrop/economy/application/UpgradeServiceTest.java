@@ -25,11 +25,11 @@ class UpgradeServiceTest {
     @Mock
     UpgradeRepository repository;
 
-    @InjectMocks
-    UpgradeService upgradeService;
-
     @Mock
     UserUpgradeRepository userUpgradeRepository;
+
+    @InjectMocks
+    UpgradeService upgradeService;
 
     @Test
     void listActive_mapsEntitiesToResponse_withCodeForI18n() {
@@ -66,37 +66,67 @@ class UpgradeServiceTest {
     }
 
     @Test
-    void listMine_mergesCatalogWithLevels_defaultZero() {
+    void listMine_mergesCatalogWithLevels_andScaledNextCost() {
         Upgrade mouse = upgrade(1L, "BETTER_MOUSE", 1, "50", "1");
         Upgrade gaming = upgrade(2L, "GAMING_MOUSE", 2, "200", "2");
+
         UserUpgrade owned = new UserUpgrade();
         owned.setUserId(15L);
         owned.setUpgradeId(1L);
         owned.setLevel(3);
+
         when(repository.findByActiveTrueOrderByTierAsc()).thenReturn(List.of(mouse, gaming));
         when(userUpgradeRepository.findByUserId(15L)).thenReturn(List.of(owned));
+
         List<MyUpgradeResponse> result = upgradeService.listMine(15L);
+
         assertThat(result).hasSize(2);
+
         MyUpgradeResponse first = result.getFirst();
         assertThat(first.code()).isEqualTo("BETTER_MOUSE");
         assertThat(first.level()).isEqualTo(3);
-        assertThat(first.nextCost()).isEqualByComparingTo("50");
         assertThat(first.price()).isEqualByComparingTo("50");
         assertThat(first.clickPower()).isEqualByComparingTo("1");
+        assertThat(first.nextCost()).isEqualByComparingTo("200");
+
         MyUpgradeResponse second = result.get(1);
         assertThat(second.code()).isEqualTo("GAMING_MOUSE");
         assertThat(second.level()).isZero();
         assertThat(second.nextCost()).isEqualByComparingTo("200");
     }
+
     @Test
-    void listMine_allZero_whenUserHasNoRows() {
+    void listMine_allZero_whenUserHasNoRows_nextCostEqualsBasePrice() {
         Upgrade mouse = upgrade(1L, "BETTER_MOUSE", 1, "50", "1");
+
         when(repository.findByActiveTrueOrderByTierAsc()).thenReturn(List.of(mouse));
         when(userUpgradeRepository.findByUserId(15L)).thenReturn(List.of());
+
         List<MyUpgradeResponse> result = upgradeService.listMine(15L);
+
         assertThat(result).hasSize(1);
         assertThat(result.getFirst().level()).isZero();
+        assertThat(result.getFirst().nextCost()).isEqualByComparingTo("50");
     }
+
+    @Test
+    void listMine_level1_nextCostIsDoubleBasePrice() {
+        Upgrade mouse = upgrade(1L, "BETTER_MOUSE", 1, "50", "1");
+
+        UserUpgrade owned = new UserUpgrade();
+        owned.setUserId(15L);
+        owned.setUpgradeId(1L);
+        owned.setLevel(1);
+
+        when(repository.findByActiveTrueOrderByTierAsc()).thenReturn(List.of(mouse));
+        when(userUpgradeRepository.findByUserId(15L)).thenReturn(List.of(owned));
+
+        List<MyUpgradeResponse> result = upgradeService.listMine(15L);
+
+        assertThat(result.getFirst().level()).isEqualTo(1);
+        assertThat(result.getFirst().nextCost()).isEqualByComparingTo("100");
+    }
+
     private static Upgrade upgrade(
             Long id, String code, int tier, String price, String power
     ) {

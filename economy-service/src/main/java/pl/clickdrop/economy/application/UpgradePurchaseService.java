@@ -38,7 +38,7 @@ public class UpgradePurchaseService {
                 .orElseGet(() -> newUserUpgrade(userId, upgradeId));
 
         int currentLevel = userUpgrade.getLevel() == null ? 0 : userUpgrade.getLevel();
-        BigDecimal cost = catalog.getPrice();
+        BigDecimal cost = UpgradePricing.nextCost(catalog.getPrice(), currentLevel);
 
         if (wallet.getBalance().compareTo(cost) < 0) {
             throw new InsufficientFundsException();
