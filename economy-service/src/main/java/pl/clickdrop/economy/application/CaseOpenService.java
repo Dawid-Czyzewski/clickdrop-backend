@@ -1,0 +1,85 @@
+package pl.clickdrop.economy.application;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import pl.clickdrop.economy.api.dto.OpenCaseResponse;
+import pl.clickdrop.economy.application.exception.CaseDropPoolEmptyException;
+import pl.clickdrop.economy.application.exception.CaseNotFoundException;
+import pl.clickdrop.economy.application.exception.InsufficientFundsException;
+import pl.clickdrop.economy.application.exception.WalletNotFoundException;
+import pl.clickdrop.economy.domain.cases.CaseDrop;
+import pl.clickdrop.economy.domain.cases.CaseDropRepository;
+import pl.clickdrop.economy.domain.cases.GameCase;
+import pl.clickdrop.economy.domain.cases.GameCaseRepository;
+import pl.clickdrop.economy.domain.inventory.UserInventoryItem;
+import pl.clickdrop.economy.domain.inventory.UserInventoryItemRepository;
+import pl.clickdrop.economy.domain.item.Item;
+import pl.clickdrop.economy.domain.item.ItemExterior;
+import pl.clickdrop.economy.domain.item.ItemRepository;
+import pl.clickdrop.economy.domain.wallet.Wallet;
+import pl.clickdrop.economy.domain.wallet.WalletRepository;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class CaseOpenService {
+
+    private final GameCaseRepository gameCaseRepository;
+    private final CaseDropRepository caseDropRepository;
+    private final ItemRepository itemRepository;
+    private final WalletRepository walletRepository;
+    private final UserInventoryItemRepository inventoryItemRepository;
+    private final WeightedPicker weightedPicker;
+    private final ExteriorRoller exteriorRoller;
+
+    @Transactional
+    public OpenCaseResponse open(Long userId, Long caseId) {
+        GameCase gameCase = gameCaseRepository.findById(caseId)
+                .filter(GameCase::isActive)
+                .orElseThrow(() -> new CaseNotFoundException(caseId));
+
+        Wallet wallet = walletRepository.findByUserId(userId)
+                .orElseThrow(() -> new WalletNotFoundException(userId));
+
+        BigDecimal cost = gameCase.getPrice();
+        if (wallet.getBalance().compareTo(cost) < 0) {
+            throw new InsufficientFundsException();
+        }
+
+        List<CaseDrop> drops = caseDropRepository.findByCaseId(caseId);
+        if (drops.isEmpty()) {
+            throw new CaseDropPoolEmptyException(caseId);
+        }
+
+        CaseDrop chosenDrop = weightedPicker.pick(drops, CaseDrop::getWeight);
+        Item item = itemRepository.findById(chosenDrop.getItemId())
+                .filter(Item::isActive)
+                .orElseThrow(() -> new CaseDropPoolEmptyException(caseId));
+
+        ItemExterior exterior = exteriorRoller.roll();
+
+        wallet.setBalance(wallet.getBalance().subtract(cost));
+        walletRepository.save(wallet);
+
+        UserInventoryItem inventoryItem = new UserInventoryItem();
+        inventoryItem.setUserId(userId);
+        inventoryItem.setItemId(item.getId());
+        inventoryItem.setExterior(exterior);
+        inventoryItem = inventoryItemRepository.save(inventoryItem);
+
+        BigDecimal suggested = SellPricing.sellPrice(item.getRarity(), exterior);
+
+        return new OpenCaseResponse(
+                inventoryItem.getId(),
+                item.getCode(),
+                item.getRarity(),
+                exterior,
+                wallet.getBalance(),
+                cost,
+                suggested
+        );
+    }
+}
