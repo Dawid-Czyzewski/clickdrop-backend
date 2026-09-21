@@ -35,6 +35,14 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/economy/wallets").permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/economy/cases",
+                                "/api/economy/cases/**"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/economy/items",
+                                "/api/economy/items/**"
+                        ).permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 )

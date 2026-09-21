@@ -5,55 +5,80 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import pl.clickdrop.economy.api.dto.CaseResponse;
+import pl.clickdrop.economy.api.dto.CaseDropResponse;
+import pl.clickdrop.economy.application.exception.CaseNotFoundException;
+import pl.clickdrop.economy.domain.cases.CaseDrop;
+import pl.clickdrop.economy.domain.cases.CaseDropRepository;
 import pl.clickdrop.economy.domain.cases.GameCase;
 import pl.clickdrop.economy.domain.cases.GameCaseRepository;
+import pl.clickdrop.economy.domain.item.Item;
+import pl.clickdrop.economy.domain.item.ItemRarity;
+import pl.clickdrop.economy.domain.item.ItemRepository;
 
-import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class CaseCatalogServiceTest {
+class CaseCatalogServiceDropsTest {
 
-    @Mock
-    GameCaseRepository gameCaseRepository;
+    @Mock GameCaseRepository gameCaseRepository;
+    @Mock CaseDropRepository caseDropRepository;
+    @Mock ItemRepository itemRepository;
 
     @InjectMocks
     CaseCatalogService caseCatalogService;
 
     @Test
-    void listActive_mapsEntitiesToResponse_withoutName() {
+    void listDrops_returnsItemsWithWeight() {
         GameCase anvil = new GameCase();
         anvil.setId(1L);
-        anvil.setCode("ANVIL");
-        anvil.setPrice(new BigDecimal("50.00"));
-        anvil.setSortOrder(1);
         anvil.setActive(true);
 
-        when(gameCaseRepository.findByActiveTrueOrderBySortOrderASC())
-                .thenReturn(List.of(anvil));
+        CaseDrop drop = new CaseDrop();
+        drop.setCaseId(1L);
+        drop.setItemId(3L);
+        drop.setWeight(15);
 
-        List<CaseResponse> result = caseCatalogService.listActive();
+        Item ak = new Item();
+        ak.setId(3L);
+        ak.setCode("AK_REDLINE");
+        ak.setRarity(ItemRarity.RESTRICTED);
+        ak.setActive(true);
+
+        when(gameCaseRepository.findById(1L)).thenReturn(Optional.of(anvil));
+        when(caseDropRepository.findByCaseId(1L)).thenReturn(List.of(drop));
+        when(itemRepository.findAllById(anyCollection())).thenReturn(List.of(ak));
+
+        List<CaseDropResponse> result = caseCatalogService.listDrops(1L);
 
         assertThat(result).hasSize(1);
-        CaseResponse dto = result.getFirst();
-        assertThat(dto.id()).isEqualTo(1L);
-        assertThat(dto.code()).isEqualTo("ANVIL");
-        assertThat(dto.price()).isEqualByComparingTo("50.00");
-        assertThat(dto.sortOrder()).isEqualTo(1);
-
-        verify(gameCaseRepository).findByActiveTrueOrderBySortOrderASC();
+        assertThat(result.getFirst().itemId()).isEqualTo(3L);
+        assertThat(result.getFirst().code()).isEqualTo("AK_REDLINE");
+        assertThat(result.getFirst().rarity()).isEqualTo(ItemRarity.RESTRICTED);
+        assertThat(result.getFirst().weight()).isEqualTo(15);
     }
 
     @Test
-    void listActive_returnsEmptyList_whenNoneActive() {
-        when(gameCaseRepository.findByActiveTrueOrderBySortOrderASC())
-                .thenReturn(List.of());
+    void listDrops_throws_whenCaseMissing() {
+        when(gameCaseRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThat(caseCatalogService.listActive()).isEmpty();
+        assertThatThrownBy(() -> caseCatalogService.listDrops(99L))
+                .isInstanceOf(CaseNotFoundException.class);
+    }
+
+    @Test
+    void listDrops_throws_whenCaseInactive() {
+        GameCase inactive = new GameCase();
+        inactive.setId(1L);
+        inactive.setActive(false);
+        when(gameCaseRepository.findById(1L)).thenReturn(Optional.of(inactive));
+
+        assertThatThrownBy(() -> caseCatalogService.listDrops(1L))
+                .isInstanceOf(CaseNotFoundException.class);
     }
 }
