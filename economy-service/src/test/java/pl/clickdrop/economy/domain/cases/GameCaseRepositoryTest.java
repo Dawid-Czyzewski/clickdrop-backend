@@ -21,7 +21,7 @@ class GameCaseRepositoryTest {
 
     @Test
     void flywaySeed_loadsEightActiveCases_orderedBySortOrder() {
-        List<GameCase> cases = gameCaseRepository.findByActiveTrueOrderBySortOrderASC();
+        List<GameCase> cases = gameCaseRepository.findByActiveTrueOrderBySortOrderAsc();
 
         assertThat(cases).hasSize(8);
         assertThat(cases).extracting(GameCase::getCode)
@@ -51,7 +51,7 @@ class GameCaseRepositoryTest {
 
     @Test
     void eachSeededCase_hasPositivePrice() {
-        List<GameCase> cases = gameCaseRepository.findByActiveTrueOrderBySortOrderASC();
+        List<GameCase> cases = gameCaseRepository.findByActiveTrueOrderBySortOrderAsc();
 
         assertThat(cases).allSatisfy(c ->
                 assertThat(c.getPrice()).isGreaterThan(BigDecimal.ZERO)

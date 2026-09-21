@@ -6,6 +6,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface GameCaseRepository extends JpaRepository<GameCase, Long> {
-    List<GameCase> findByActiveTrueOrderBySortOrderASC();
+    List<GameCase> findByActiveTrueOrderBySortOrderAsc();
     Optional<GameCase> findByCode(String code);
 }

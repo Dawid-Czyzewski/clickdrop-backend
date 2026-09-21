@@ -28,7 +28,7 @@ public class CaseCatalogService {
     private final ItemRepository itemRepository;
 
     public List<CaseResponse> listActive() {
-        return gameCaseRepository.findByActiveTrueOrderBySortOrderASC()
+        return gameCaseRepository.findByActiveTrueOrderBySortOrderAsc()
                 .stream()
                 .map(this::toResponse)
                 .toList();
