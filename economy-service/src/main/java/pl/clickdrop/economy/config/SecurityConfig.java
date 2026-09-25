@@ -39,6 +39,7 @@ public class SecurityConfig {
                                 "/api/economy/cases",
                                 "/api/economy/cases/**"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/economy/daily/drops").permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/economy/items",
                                 "/api/economy/items/**"
