@@ -1,17 +1,14 @@
 package pl.clickdrop.economy.api.dto;
 
-import pl.clickdrop.economy.domain.item.ItemExterior;
-import pl.clickdrop.economy.domain.item.ItemRarity;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-import java.math.BigDecimal;
-import java.time.Instant;
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = DailySkinClaimResponse.class, name = "SKIN"),
+        @JsonSubTypes.Type(value = DailyCashClaimResponse.class, name = "CASH")
+})
+public sealed interface DailyClaimResponse
+        permits DailySkinClaimResponse, DailyCashClaimResponse {
 
-public record DailyClaimResponse(
-        Long inventoryItemId,
-        String itemCode,
-        ItemRarity rarity,
-        ItemExterior exterior,
-        BigDecimal suggestedSellPrice,
-        Instant nextClaimAt
-) {
 }
