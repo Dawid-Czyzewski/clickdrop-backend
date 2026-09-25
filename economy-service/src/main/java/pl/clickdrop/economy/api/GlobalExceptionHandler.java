@@ -67,4 +67,10 @@ public class GlobalExceptionHandler {
                         "nextClaimAt", ex.getNextClaimAt().toString()
                 ));
     }
+
+    @ExceptionHandler(CaseOpenRateLimitException.class)
+    public ResponseEntity<Map<String, String>> handleCaseOpenRateLimit(CaseOpenRateLimitException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(Map.of("message", ex.getMessage()));
+    }
 }

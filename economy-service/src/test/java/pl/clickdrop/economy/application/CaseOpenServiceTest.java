@@ -9,6 +9,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import pl.clickdrop.economy.api.dto.OpenCaseResponse;
 import pl.clickdrop.economy.application.exception.CaseDropPoolEmptyException;
 import pl.clickdrop.economy.application.exception.CaseNotFoundException;
+import pl.clickdrop.economy.application.exception.CaseOpenRateLimitException;
 import pl.clickdrop.economy.application.exception.InsufficientFundsException;
 import pl.clickdrop.economy.domain.cases.CaseDrop;
 import pl.clickdrop.economy.domain.cases.CaseDropRepository;
@@ -43,6 +44,7 @@ class CaseOpenServiceTest {
     @Mock UserInventoryItemRepository inventoryItemRepository;
     @Mock WeightedPicker weightedPicker;
     @Mock ExteriorRoller exteriorRoller;
+    @Mock CaseOpenRateLimiter caseOpenRateLimiter;
 
     @InjectMocks
     CaseOpenService caseOpenService;
@@ -84,6 +86,20 @@ class CaseOpenServiceTest {
         assertThat(captor.getValue().getExterior()).isEqualTo(ItemExterior.FIELD_TESTED);
 
         verify(weightedPicker).pick(eq(List.of(drop)), any(ToIntFunction.class));
+        verify(caseOpenRateLimiter).check(15L);
+    }
+
+    @Test
+    void open_doesNotChargeOrSave_whenRateLimited() {
+        doThrow(new CaseOpenRateLimitException()).when(caseOpenRateLimiter).check(15L);
+
+        assertThatThrownBy(() -> caseOpenService.open(15L, 1L))
+                .isInstanceOf(CaseOpenRateLimitException.class);
+
+        verify(gameCaseRepository, never()).findById(any());
+        verify(walletRepository, never()).findByUserId(any());
+        verify(walletRepository, never()).save(any());
+        verify(inventoryItemRepository, never()).save(any());
     }
 
     @Test

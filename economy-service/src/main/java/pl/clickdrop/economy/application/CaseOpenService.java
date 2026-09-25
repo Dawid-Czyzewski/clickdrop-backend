@@ -34,9 +34,12 @@ public class CaseOpenService {
     private final UserInventoryItemRepository inventoryItemRepository;
     private final WeightedPicker weightedPicker;
     private final ExteriorRoller exteriorRoller;
+    private final CaseOpenRateLimiter caseOpenRateLimiter;
 
     @Transactional
     public OpenCaseResponse open(Long userId, Long caseId) {
+        caseOpenRateLimiter.check(userId);
+
         GameCase gameCase = gameCaseRepository.findById(caseId)
                 .filter(GameCase::isActive)
                 .orElseThrow(() -> new CaseNotFoundException(caseId));
