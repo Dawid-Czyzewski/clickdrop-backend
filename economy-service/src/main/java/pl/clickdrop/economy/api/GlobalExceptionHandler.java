@@ -58,4 +58,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("message", ex.getMessage()));
     }
+
+    @ExceptionHandler(DailyAlreadyClaimedException.class)
+    public ResponseEntity<Map<String, String>> handleDailyClaimed(DailyAlreadyClaimedException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(Map.of(
+                        "message", ex.getMessage(),
+                        "nextClaimAt", ex.getNextClaimAt().toString()
+                ));
+    }
 }
