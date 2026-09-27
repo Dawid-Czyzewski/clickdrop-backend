@@ -73,4 +73,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .body(Map.of("message", ex.getMessage()));
     }
+
+    @ExceptionHandler(SkinUpgradeNoTargetsException.class)
+    public ResponseEntity<Map<String, String>> handleNoTargets(SkinUpgradeNoTargetsException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("message", ex.getMessage()));
+    }
 }
