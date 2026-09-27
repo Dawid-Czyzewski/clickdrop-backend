@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import pl.clickdrop.economy.api.dto.InventoryItemResponse;
 import pl.clickdrop.economy.api.dto.SellInventoryItemResponse;
 import pl.clickdrop.economy.api.dto.SkinUpgradePreviewResponse;
+import pl.clickdrop.economy.api.dto.SkinUpgradeRequest;
 import pl.clickdrop.economy.api.dto.SkinUpgradeResponse;
 import pl.clickdrop.economy.application.InventoryService;
 import pl.clickdrop.economy.application.SkinUpgradeService;
@@ -48,9 +49,10 @@ public class InventoryController {
     @PostMapping("/{inventoryItemId}/upgrade")
     public ResponseEntity<SkinUpgradeResponse> upgrade(
         Authentication authentication,
-        @PathVariable Long inventoryItemId
+        @PathVariable Long inventoryItemId,
+        @RequestBody SkinUpgradeRequest request
     ) {
         Long userId = (Long) authentication.getPrincipal();
-        return ResponseEntity.ok(skinUpgradeService.upgrade(userId, inventoryItemId));
+        return ResponseEntity.ok(skinUpgradeService.upgrade(userId, inventoryItemId, request));
     }
 }

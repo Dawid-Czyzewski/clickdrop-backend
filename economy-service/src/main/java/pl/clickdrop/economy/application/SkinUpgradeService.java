@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.clickdrop.economy.api.dto.*;
 import pl.clickdrop.economy.application.exception.InventoryItemNotFoundException;
+import pl.clickdrop.economy.application.exception.SkinUpgradeInvalidTargetException;
 import pl.clickdrop.economy.application.exception.SkinUpgradeNoTargetsException;
 import pl.clickdrop.economy.domain.inventory.UserInventoryItem;
 import pl.clickdrop.economy.domain.inventory.UserInventoryItemRepository;
@@ -13,6 +14,8 @@ import pl.clickdrop.economy.domain.item.ItemExterior;
 import pl.clickdrop.economy.domain.item.ItemRepository;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -20,10 +23,10 @@ import java.util.List;
 public class SkinUpgradeService {
 
     private static final double SUCCESS_CHANCE = 0.5;
+    private static final BigDecimal MAX_PRICE_MULTIPLIER = new BigDecimal("1.75");
 
     private final UserInventoryItemRepository userInventoryItemRepository;
     private final ItemRepository itemRepository;
-    private final ExteriorRoller exteriorRoller;
     private final SkinUpgradeRng skinUpgradeRng;
 
     @Transactional(readOnly = true)
@@ -33,13 +36,7 @@ public class SkinUpgradeService {
 
         BigDecimal currentPrice = SellPricing.sellPrice(current.getRarity(), row.getExterior());
         List<SkinUpgradeTargetDto> targets = findDearerTargets(currentPrice).stream()
-                .map(item -> new SkinUpgradeTargetDto(
-                        item.getId(),
-                        item.getCode(),
-                        item.getDisplayName(),
-                        item.getRarity(),
-                        SellPricing.sellPrice(item.getRarity(), ItemExterior.FIELD_TESTED)
-                ))
+                .map(SkinUpgradeService::toDto)
                 .toList();
 
         return new SkinUpgradePreviewResponse(
@@ -57,57 +54,96 @@ public class SkinUpgradeService {
     }
 
     @Transactional
-    public SkinUpgradeResponse upgrade(Long userId, Long inventoryItemId) {
+    public SkinUpgradeResponse upgrade(Long userId, Long inventoryItemId, SkinUpgradeRequest request) {
         UserInventoryItem row = requireOwned(userId, inventoryItemId);
         Item current = requireItem(row.getItemId(), inventoryItemId);
 
         BigDecimal currentPrice = SellPricing.sellPrice(current.getRarity(), row.getExterior());
-        List<Item> targets = findDearerTargets(currentPrice);
+        List<UpgradeTarget> targets = findDearerTargets(currentPrice);
 
         if (targets.isEmpty()) {
             throw new SkinUpgradeNoTargetsException(inventoryItemId);
         }
+
+        UpgradeTarget chosen = resolveChosenTarget(targets, request, inventoryItemId);
 
         if (!skinUpgradeRng.rollSuccess()) {
             userInventoryItemRepository.delete(row);
             return new SkinUpgradeFailResponse();
         }
 
-        Item target = skinUpgradeRng.pickOne(targets);
-        ItemExterior exterior = exteriorRoller.roll();
-
         userInventoryItemRepository.delete(row);
 
         UserInventoryItem upgraded = new UserInventoryItem();
         upgraded.setUserId(userId);
-        upgraded.setItemId(target.getId());
-        upgraded.setExterior(exterior);
+        upgraded.setItemId(chosen.item().getId());
+        upgraded.setExterior(chosen.exterior());
         upgraded = userInventoryItemRepository.save(upgraded);
 
         return new SkinUpgradeSuccessResponse(
                 upgraded.getId(),
-                target.getCode(),
-                target.getDisplayName(),
-                target.getRarity(),
-                exterior,
-                SellPricing.sellPrice(target.getRarity(), exterior)
+                chosen.item().getCode(),
+                chosen.item().getDisplayName(),
+                chosen.item().getRarity(),
+                chosen.exterior(),
+                chosen.price()
         );
+    }
+
+    private UpgradeTarget resolveChosenTarget(
+            List<UpgradeTarget> targets,
+            SkinUpgradeRequest request,
+            Long inventoryItemId
+    ) {
+        if (request == null || request.targetItemId() == null || request.targetExterior() == null) {
+            throw new SkinUpgradeInvalidTargetException(inventoryItemId);
+        }
+        return targets.stream()
+                .filter(t -> t.item().getId().equals(request.targetItemId())
+                        && t.exterior() == request.targetExterior())
+                .findFirst()
+                .orElseThrow(() -> new SkinUpgradeInvalidTargetException(inventoryItemId));
     }
 
     private UserInventoryItem requireOwned(Long userId, Long inventoryItemId) {
         return userInventoryItemRepository.findByIdAndUserId(inventoryItemId, userId)
                 .orElseThrow(() -> new InventoryItemNotFoundException(inventoryItemId));
     }
+
     private Item requireItem(Long itemId, Long inventoryItemId) {
         return itemRepository.findById(itemId)
                 .filter(Item::isActive)
                 .orElseThrow(() -> new InventoryItemNotFoundException(inventoryItemId));
     }
-    private List<Item> findDearerTargets(BigDecimal currentPrice) {
-        return itemRepository.findByActiveTrueOrderByIdAsc().stream()
-                .filter(item -> SellPricing
-                        .sellPrice(item.getRarity(), ItemExterior.FIELD_TESTED)
-                        .compareTo(currentPrice) > 0)
-                .toList();
+
+    private List<UpgradeTarget> findDearerTargets(BigDecimal currentPrice) {
+        BigDecimal maxPrice = currentPrice
+                .multiply(MAX_PRICE_MULTIPLIER)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        List<UpgradeTarget> targets = new ArrayList<>();
+        for (Item item : itemRepository.findByActiveTrueOrderByIdAsc()) {
+            for (ItemExterior exterior : ItemExterior.values()) {
+                BigDecimal price = SellPricing.sellPrice(item.getRarity(), exterior);
+                if (price.compareTo(currentPrice) > 0 && price.compareTo(maxPrice) <= 0) {
+                    targets.add(new UpgradeTarget(item, exterior, price));
+                }
+            }
+        }
+        return targets;
     }
+
+    private static SkinUpgradeTargetDto toDto(UpgradeTarget target) {
+        Item item = target.item();
+        return new SkinUpgradeTargetDto(
+                item.getId(),
+                item.getCode(),
+                item.getDisplayName(),
+                item.getRarity(),
+                target.exterior(),
+                target.price()
+        );
+    }
+
+    private record UpgradeTarget(Item item, ItemExterior exterior, BigDecimal price) {}
 }
