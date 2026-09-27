@@ -148,6 +148,7 @@ class SkinUpgradeServiceTest {
         Item item = new Item();
         item.setId(id);
         item.setCode(code);
+        item.setDisplayName(code.replace('_', ' '));
         item.setRarity(rarity);
         item.setActive(true);
         return item;

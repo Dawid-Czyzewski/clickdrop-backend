@@ -126,6 +126,7 @@ public class DailyRewardService {
         return new DailySkinClaimResponse(
                 inventoryItem.getId(),
                 item.getCode(),
+                item.getDisplayName(),
                 item.getRarity(),
                 exterior,
                 SellPricing.sellPrice(item.getRarity(), exterior),
@@ -164,6 +165,7 @@ public class DailyRewardService {
         return new DailySkinDropResponse(
                 item.getId(),
                 item.getCode(),
+                item.getDisplayName(),
                 item.getRarity(),
                 drop.getWeight()
         );

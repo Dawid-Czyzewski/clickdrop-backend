@@ -24,6 +24,6 @@ public class ItemService {
     }
 
     private ItemResponse toResponse(Item item) {
-        return new ItemResponse(item.getId(), item.getCode(), item.getRarity());
+        return new ItemResponse(item.getId(), item.getCode(), item.getDisplayName(), item.getRarity());
     }
 }

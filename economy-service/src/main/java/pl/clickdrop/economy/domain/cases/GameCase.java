@@ -15,8 +15,11 @@ public class GameCase {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 64, unique = true)
+    @Column(nullable = false, length = 128, unique = true)
     private String code;
+
+    @Column(name = "display_name", nullable = false, length = 200)
+    private String displayName = "";
 
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal price;

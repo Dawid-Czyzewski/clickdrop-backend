@@ -113,6 +113,7 @@ class InventoryServiceTest {
         Item i = new Item();
         i.setId(id);
         i.setCode(code);
+        i.setDisplayName(code.replace('_', ' '));
         i.setRarity(rarity);
         i.setActive(true);
         return i;

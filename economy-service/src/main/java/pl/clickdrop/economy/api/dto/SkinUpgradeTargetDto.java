@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 public record SkinUpgradeTargetDto(
         Long itemId,
         String itemCode,
+        String itemDisplayName,
         ItemRarity rarity,
         BigDecimal suggestedSellPrice
 ) {}

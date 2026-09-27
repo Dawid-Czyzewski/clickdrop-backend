@@ -10,6 +10,7 @@ public record InventoryItemResponse(
         Long inventoryItemId,
         Long itemId,
         String code,
+        String displayName,
         ItemRarity rarity,
         ItemExterior exterior,
         BigDecimal suggestedSellPrice,

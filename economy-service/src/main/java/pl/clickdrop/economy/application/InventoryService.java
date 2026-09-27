@@ -53,6 +53,7 @@ public class InventoryService {
                             row.getId(),
                             item.getId(),
                             item.getCode(),
+                            item.getDisplayName(),
                             item.getRarity(),
                             row.getExterior(),
                             SellPricing.sellPrice(item.getRarity(), row.getExterior()),

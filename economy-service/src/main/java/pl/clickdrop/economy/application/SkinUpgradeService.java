@@ -36,6 +36,7 @@ public class SkinUpgradeService {
                 .map(item -> new SkinUpgradeTargetDto(
                         item.getId(),
                         item.getCode(),
+                        item.getDisplayName(),
                         item.getRarity(),
                         SellPricing.sellPrice(item.getRarity(), ItemExterior.FIELD_TESTED)
                 ))
@@ -45,6 +46,7 @@ public class SkinUpgradeService {
                 row.getId(),
                 new SkinUpgradeCurrentDto(
                         current.getCode(),
+                        current.getDisplayName(),
                         current.getRarity(),
                         row.getExterior(),
                         currentPrice
@@ -85,6 +87,7 @@ public class SkinUpgradeService {
         return new SkinUpgradeSuccessResponse(
                 upgraded.getId(),
                 target.getCode(),
+                target.getDisplayName(),
                 target.getRarity(),
                 exterior,
                 SellPricing.sellPrice(target.getRarity(), exterior)

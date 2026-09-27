@@ -9,6 +9,7 @@ import java.time.Instant;
 public record DailySkinClaimResponse(
         Long inventoryItemId,
         String itemCode,
+        String itemDisplayName,
         ItemRarity rarity,
         ItemExterior exterior,
         BigDecimal suggestedSellPrice,

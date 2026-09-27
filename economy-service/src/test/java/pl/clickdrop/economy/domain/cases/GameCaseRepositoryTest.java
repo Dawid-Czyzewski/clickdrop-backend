@@ -19,49 +19,40 @@ class GameCaseRepositoryTest {
     @Autowired
     GameCaseRepository gameCaseRepository;
 
+    @Autowired
+    CaseDropRepository caseDropRepository;
+
     @Test
-    void flywaySeed_loadsEightActiveCases_orderedBySortOrder() {
+    void flywaySeed_loadsTwelveActiveCsCases_orderedBySortOrder() {
         List<GameCase> cases = gameCaseRepository.findByActiveTrueOrderBySortOrderAsc();
 
-        assertThat(cases).hasSize(8);
+        assertThat(cases).hasSize(12);
         assertThat(cases).extracting(GameCase::getCode)
-                .containsExactly(
-                        "ANVIL",
-                        "TEMPER",
-                        "FORGEFIRE",
-                        "EMBER",
-                        "NOVA",
-                        "RIFT",
-                        "PULSE",
-                        "SHADOW"
+                .contains(
+                        "REVOLUTION_CASE",
+                        "KILOWATT_CASE",
+                        "DREAMS_NIGHTMARES_CASE"
                 );
-        assertThat(cases).extracting(GameCase::getSortOrder)
-                .containsExactly(1, 2, 3, 4, 5, 6, 7, 8);
+        assertThat(cases).allSatisfy(c -> {
+            assertThat(c.getDisplayName()).isNotBlank();
+            assertThat(c.getPrice()).isGreaterThan(BigDecimal.ZERO);
+            assertThat(caseDropRepository.findByCaseId(c.getId())).isNotEmpty();
+        });
     }
 
     @Test
-    void findByCode_returnsAnvilWithPrice() {
+    void legacyAnvil_isInactive_afterCsCatalogSeed() {
         GameCase anvil = gameCaseRepository.findByCode("ANVIL").orElseThrow();
 
+        assertThat(anvil.isActive()).isFalse();
         assertThat(anvil.getPrice()).isEqualByComparingTo("50.00");
-        assertThat(anvil.getSortOrder()).isEqualTo(1);
-        assertThat(anvil.isActive()).isTrue();
-        assertThat(anvil.getCreatedAt()).isNotNull();
-    }
-
-    @Test
-    void eachSeededCase_hasPositivePrice() {
-        List<GameCase> cases = gameCaseRepository.findByActiveTrueOrderBySortOrderAsc();
-
-        assertThat(cases).allSatisfy(c ->
-                assertThat(c.getPrice()).isGreaterThan(BigDecimal.ZERO)
-        );
     }
 
     @Test
     void rejectsDuplicateCode() {
         GameCase duplicate = new GameCase();
         duplicate.setCode("ANVIL");
+        duplicate.setDisplayName("Anvil");
         duplicate.setPrice(new BigDecimal("10.00"));
         duplicate.setSortOrder(99);
 

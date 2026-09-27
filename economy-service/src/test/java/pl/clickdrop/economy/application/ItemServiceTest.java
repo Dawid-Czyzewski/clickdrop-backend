@@ -26,10 +26,11 @@ class ItemServiceTest {
     ItemService itemService;
 
     @Test
-    void listActive_mapsEntitiesToResponse_withoutName() {
+    void listActive_mapsEntitiesToResponse() {
         Item ak = new Item();
         ak.setId(3L);
         ak.setCode("AK_REDLINE");
+        ak.setDisplayName("AK-47 | Redline");
         ak.setRarity(ItemRarity.RESTRICTED);
         ak.setActive(true);
 
@@ -41,6 +42,7 @@ class ItemServiceTest {
         ItemResponse dto = result.getFirst();
         assertThat(dto.id()).isEqualTo(3L);
         assertThat(dto.code()).isEqualTo("AK_REDLINE");
+        assertThat(dto.displayName()).isEqualTo("AK-47 | Redline");
         assertThat(dto.rarity()).isEqualTo(ItemRarity.RESTRICTED);
 
         verify(itemRepository).findByActiveTrueOrderByIdAsc();

@@ -157,6 +157,7 @@ class CaseOpenServiceTest {
         GameCase c = new GameCase();
         c.setId(id);
         c.setCode("ANVIL");
+        c.setDisplayName("Anvil");
         c.setPrice(new BigDecimal(price));
         c.setActive(true);
         return c;
@@ -182,6 +183,7 @@ class CaseOpenServiceTest {
         Item i = new Item();
         i.setId(id);
         i.setCode(code);
+        i.setDisplayName(code.replace('_', ' '));
         i.setRarity(rarity);
         i.setActive(true);
         return i;

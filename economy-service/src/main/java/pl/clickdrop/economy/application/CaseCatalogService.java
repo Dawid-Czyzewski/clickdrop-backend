@@ -61,6 +61,7 @@ public class CaseCatalogService {
                     return new CaseDropResponse(
                             item.getId(),
                             item.getCode(),
+                            item.getDisplayName(),
                             item.getRarity(),
                             drop.getWeight()
                     );
@@ -73,6 +74,7 @@ public class CaseCatalogService {
         return new CaseResponse(
                 gameCase.getId(),
                 gameCase.getCode(),
+                gameCase.getDisplayName(),
                 gameCase.getPrice(),
                 gameCase.getSortOrder()
         );

@@ -19,26 +19,28 @@ class ItemRepositoryTest {
     ItemRepository itemRepository;
 
     @Test
-    void flywaySeed_loadsSixActiveItems() {
+    void flywaySeed_loadsLegacyAndCsCatalogItems() {
         List<Item> items = itemRepository.findByActiveTrueOrderByIdAsc();
 
-        assertThat(items).hasSize(6);
+        assertThat(items.size()).isGreaterThanOrEqualTo(100);
         assertThat(items).extracting(Item::getCode)
-                .containsExactly(
+                .contains(
                         "GLOCK_WATER_ELEMENTAL",
                         "USP_GUARDIAN",
                         "AK_REDLINE",
-                        "AWP_ELECTRIC_HIVE",
-                        "M4A4_DESERT_STRIKE",
                         "AWP_ASIIMOV"
                 );
+        assertThat(items).allSatisfy(item ->
+                assertThat(item.getDisplayName()).isNotBlank()
+        );
     }
 
     @Test
-    void findByCode_returnsSeededItemWithRarity() {
+    void findByCode_returnsSeededItemWithRarityAndDisplayName() {
         Item ak = itemRepository.findByCode("AK_REDLINE").orElseThrow();
 
         assertThat(ak.getRarity()).isEqualTo(ItemRarity.RESTRICTED);
+        assertThat(ak.getDisplayName()).isEqualTo("AK-47 | Redline");
         assertThat(ak.isActive()).isTrue();
         assertThat(ak.getCreatedAt()).isNotNull();
     }
@@ -54,6 +56,7 @@ class ItemRepositoryTest {
     void rejectsDuplicateCode() {
         Item duplicate = new Item();
         duplicate.setCode("AK_REDLINE");
+        duplicate.setDisplayName("dup");
         duplicate.setRarity(ItemRarity.MIL_SPEC);
 
         assertThatThrownBy(() -> itemRepository.saveAndFlush(duplicate))

@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 public record OpenCaseResponse(
         Long inventoryItemId,
         String itemCode,
+        String itemDisplayName,
         ItemRarity rarity,
         ItemExterior exterior,
         BigDecimal balance,

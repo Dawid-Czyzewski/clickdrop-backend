@@ -78,6 +78,7 @@ public class CaseOpenService {
         return new OpenCaseResponse(
                 inventoryItem.getId(),
                 item.getCode(),
+                item.getDisplayName(),
                 item.getRarity(),
                 exterior,
                 wallet.getBalance(),

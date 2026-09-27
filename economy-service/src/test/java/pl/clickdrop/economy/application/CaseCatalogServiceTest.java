@@ -47,6 +47,7 @@ class CaseCatalogServiceDropsTest {
         Item ak = new Item();
         ak.setId(3L);
         ak.setCode("AK_REDLINE");
+        ak.setDisplayName("AK-47 | Redline");
         ak.setRarity(ItemRarity.RESTRICTED);
         ak.setActive(true);
 
@@ -59,6 +60,7 @@ class CaseCatalogServiceDropsTest {
         assertThat(result).hasSize(1);
         assertThat(result.getFirst().itemId()).isEqualTo(3L);
         assertThat(result.getFirst().code()).isEqualTo("AK_REDLINE");
+        assertThat(result.getFirst().displayName()).isEqualTo("AK-47 | Redline");
         assertThat(result.getFirst().rarity()).isEqualTo(ItemRarity.RESTRICTED);
         assertThat(result.getFirst().weight()).isEqualTo(15);
     }
