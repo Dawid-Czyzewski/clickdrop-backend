@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.clickdrop.economy.api.dto.OpenCaseResponse;
+import pl.clickdrop.economy.application.client.AuthClient;
+import pl.clickdrop.economy.application.client.AuthExperienceResponse;
 import pl.clickdrop.economy.application.exception.CaseDropPoolEmptyException;
 import pl.clickdrop.economy.application.exception.CaseNotFoundException;
 import pl.clickdrop.economy.application.exception.InsufficientFundsException;
@@ -27,6 +29,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CaseOpenService {
 
+    private final Integer CASE_OPEN_XP = 10;
+
     private final GameCaseRepository gameCaseRepository;
     private final CaseDropRepository caseDropRepository;
     private final ItemRepository itemRepository;
@@ -35,6 +39,7 @@ public class CaseOpenService {
     private final WeightedPicker weightedPicker;
     private final ExteriorRoller exteriorRoller;
     private final CaseOpenRateLimiter caseOpenRateLimiter;
+    private final AuthClient authClient;
 
     @Transactional
     public OpenCaseResponse open(Long userId, Long caseId) {
@@ -75,6 +80,8 @@ public class CaseOpenService {
 
         BigDecimal suggested = SellPricing.sellPrice(item.getRarity(), exterior);
 
+        AuthExperienceResponse xp = authClient.addExperience(userId, CASE_OPEN_XP);
+
         return new OpenCaseResponse(
                 inventoryItem.getId(),
                 item.getCode(),
@@ -83,7 +90,10 @@ public class CaseOpenService {
                 exterior,
                 wallet.getBalance(),
                 cost,
-                suggested
+                suggested,
+                xp.experienceGained(),
+                xp.level(),
+                xp.experience()
         );
     }
 }

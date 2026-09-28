@@ -13,6 +13,9 @@ public record OpenCaseResponse(
         ItemExterior exterior,
         BigDecimal balance,
         BigDecimal cost,
-        BigDecimal suggestedSellPrice
+        BigDecimal suggestedSellPrice,
+         Integer experienceGained,
+        Integer level,
+        Integer experience
 ) {
 }
