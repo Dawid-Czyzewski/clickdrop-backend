@@ -29,7 +29,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CaseOpenService {
 
-    private final Integer CASE_OPEN_XP = 10;
+    private static final int CASE_OPEN_XP = 10;
 
     private final GameCaseRepository gameCaseRepository;
     private final CaseDropRepository caseDropRepository;
@@ -81,6 +81,9 @@ public class CaseOpenService {
         BigDecimal suggested = SellPricing.sellPrice(item.getRarity(), exterior);
 
         AuthExperienceResponse xp = authClient.addExperience(userId, CASE_OPEN_XP);
+        if (xp == null) {
+            throw new IllegalStateException("Auth experience response was null for userId=" + userId);
+        }
 
         return new OpenCaseResponse(
                 inventoryItem.getId(),

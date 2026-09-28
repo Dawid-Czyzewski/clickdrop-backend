@@ -37,6 +37,8 @@ public class InternalApiKeyFilter extends OncePerRequestFilter {
         String key = request.getHeader(HEADER);
         if (key == null || !key.equals(internalApiKey)) {
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            return;
         }
+        filterChain.doFilter(request, response);
     }
 }
