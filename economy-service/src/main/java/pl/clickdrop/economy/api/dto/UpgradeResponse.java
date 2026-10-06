@@ -9,6 +9,7 @@ public record UpgradeResponse(
         String description,
         Integer tier,
         BigDecimal price,
-        BigDecimal clickPower
+        BigDecimal clickPower,
+        BigDecimal incomePerSecond
 ) {
 }

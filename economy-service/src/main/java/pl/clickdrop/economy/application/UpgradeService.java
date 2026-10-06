@@ -52,7 +52,8 @@ public class UpgradeService {
                 u.getDescription(),
                 u.getTier(),
                 u.getPrice(),
-                u.getClickPower()
+                u.getClickPower(),
+                u.getIncomePerSecond()
         );
     }
 
@@ -64,7 +65,8 @@ public class UpgradeService {
                 u.getPrice(),
                 u.getClickPower(),
                 level,
-                UpgradePricing.nextCost(u.getPrice(), level)
+                UpgradePricing.nextCost(u.getPrice(), level),
+                u.getIncomePerSecond()
         );
     }
 }

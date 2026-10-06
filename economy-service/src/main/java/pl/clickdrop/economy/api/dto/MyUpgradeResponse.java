@@ -9,6 +9,7 @@ public record MyUpgradeResponse(
         BigDecimal price,
         BigDecimal clickPower,
         Integer level,
-        BigDecimal nextCost
+        BigDecimal nextCost,
+        BigDecimal incomePerSecond
 ) {
 }

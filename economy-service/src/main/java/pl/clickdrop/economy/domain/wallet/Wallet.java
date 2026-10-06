@@ -26,6 +26,9 @@ public class Wallet {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal balance = BigDecimal.ZERO;
 
+    @Column(name = "last_idle_collected_at", nullable = false)
+    private Instant lastIdleCollectedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -46,6 +49,10 @@ public class Wallet {
 
         if (balance == null) {
             balance = BigDecimal.ZERO;
+        }
+
+        if (lastIdleCollectedAt == null) {
+            lastIdleCollectedAt = now;
         }
     }
 

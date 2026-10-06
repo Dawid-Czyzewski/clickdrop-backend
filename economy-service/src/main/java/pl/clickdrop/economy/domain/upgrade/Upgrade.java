@@ -27,6 +27,9 @@ public class Upgrade {
     @Column(nullable = false)
     private Integer tier;
 
+    @Column(name = "income_per_second", nullable = false, precision = 19, scale = 4)
+    private BigDecimal incomePerSecond = BigDecimal.ZERO;
+
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal price;
 
