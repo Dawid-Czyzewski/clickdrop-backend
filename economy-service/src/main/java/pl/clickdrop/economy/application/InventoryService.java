@@ -56,7 +56,8 @@ public class InventoryService {
                             item.getDisplayName(),
                             item.getRarity(),
                             row.getExterior(),
-                            SellPricing.sellPrice(item.getRarity(), row.getExterior()),
+                            row.isStatTrack(),
+                            SellPricing.sellPrice(item.getRarity(), row.getExterior(), row.isStatTrack()),
                             row.getCreatedAt()
                     );
                 }).filter(Objects::nonNull)
@@ -75,7 +76,7 @@ public class InventoryService {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new WalletNotFoundException(userId));
 
-        BigDecimal soldFor = SellPricing.sellPrice(item.getRarity(), row.getExterior());
+        BigDecimal soldFor = SellPricing.sellPrice(item.getRarity(), row.getExterior(), row.isStatTrack());
 
         wallet.setBalance(wallet.getBalance().add(soldFor));
         walletRepository.save(wallet);

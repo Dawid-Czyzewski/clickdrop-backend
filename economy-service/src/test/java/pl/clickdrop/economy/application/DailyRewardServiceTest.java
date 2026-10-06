@@ -50,6 +50,7 @@ class DailyRewardServiceTest {
     @Mock WalletRepository walletRepository;
     @Mock WeightedPicker weightedPicker;
     @Mock ExteriorRoller exteriorRoller;
+    @Mock StatTrackRoller StatTrackRoller;
 
     @InjectMocks
     DailyRewardService dailyRewardService;
@@ -99,6 +100,7 @@ class DailyRewardServiceTest {
         when(weightedPicker.pick(anyList(), any())).thenReturn(drop);
         when(itemRepository.findById(3L)).thenReturn(Optional.of(item));
         when(exteriorRoller.roll()).thenReturn(ItemExterior.FIELD_TESTED);
+        when(StatTrackRoller.roll()).thenReturn(false);
         when(userInventoryItemRepository.save(any(UserInventoryItem.class))).thenAnswer(inv -> {
             UserInventoryItem row = inv.getArgument(0);
             row.setId(99L);
@@ -111,6 +113,7 @@ class DailyRewardServiceTest {
         DailySkinClaimResponse skin = (DailySkinClaimResponse) res;
         assertThat(skin.inventoryItemId()).isEqualTo(99L);
         assertThat(skin.itemCode()).isEqualTo("AK_REDLINE");
+        assertThat(skin.statTrack()).isFalse();
         assertThat(skin.suggestedSellPrice()).isEqualByComparingTo("40.00");
         verify(walletRepository, never()).save(any());
         verify(dailyClaimRepository).save(any());

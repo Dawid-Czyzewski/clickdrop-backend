@@ -12,6 +12,7 @@ public record DailySkinClaimResponse(
         String itemDisplayName,
         ItemRarity rarity,
         ItemExterior exterior,
+        boolean statTrack,
         BigDecimal suggestedSellPrice,
         Instant nextClaimAt
 ) implements DailyClaimResponse {

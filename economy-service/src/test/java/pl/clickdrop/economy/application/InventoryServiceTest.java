@@ -55,7 +55,26 @@ class InventoryServiceTest {
         assertThat(dto.code()).isEqualTo("AK_REDLINE");
         assertThat(dto.rarity()).isEqualTo(ItemRarity.RESTRICTED);
         assertThat(dto.exterior()).isEqualTo(ItemExterior.FIELD_TESTED);
+        assertThat(dto.statTrack()).isFalse();
         assertThat(dto.suggestedSellPrice()).isEqualByComparingTo("40.00");
+    }
+
+    @Test
+    void sell_statTrack_appliesMultiplier() {
+        UserInventoryItem row = inventoryRow(99L, 15L, 3L, ItemExterior.FIELD_TESTED);
+        row.setStatTrack(true);
+        Item item = item(3L, "AK_REDLINE", ItemRarity.RESTRICTED);
+        Wallet wallet = wallet(15L, "10.00");
+
+        when(inventoryItemRepository.findByIdAndUserId(99L, 15L)).thenReturn(Optional.of(row));
+        when(itemRepository.findById(3L)).thenReturn(Optional.of(item));
+        when(walletRepository.findByUserId(15L)).thenReturn(Optional.of(wallet));
+        when(walletRepository.save(any(Wallet.class))).thenAnswer(i -> i.getArgument(0));
+
+        SellInventoryItemResponse res = inventoryService.sell(15L, 99L);
+
+        assertThat(res.soldFor()).isEqualByComparingTo("50.00");
+        assertThat(res.balance()).isEqualByComparingTo("60.00");
     }
 
     @Test

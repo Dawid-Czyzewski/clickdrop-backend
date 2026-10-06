@@ -28,13 +28,15 @@ public class SkinUpgradeService {
     private final UserInventoryItemRepository userInventoryItemRepository;
     private final ItemRepository itemRepository;
     private final SkinUpgradeRng skinUpgradeRng;
+    private final StatTrackRoller StatTrackRoller;
 
     @Transactional(readOnly = true)
     public SkinUpgradePreviewResponse preview(Long userId, Long inventoryItemId) {
         UserInventoryItem row = requireOwned(userId, inventoryItemId);
         Item current = requireItem(row.getItemId(), inventoryItemId);
 
-        BigDecimal currentPrice = SellPricing.sellPrice(current.getRarity(), row.getExterior());
+        BigDecimal currentPrice = SellPricing.sellPrice(
+                current.getRarity(), row.getExterior(), row.isStatTrack());
         List<SkinUpgradeTargetDto> targets = findDearerTargets(currentPrice).stream()
                 .map(SkinUpgradeService::toDto)
                 .toList();
@@ -46,6 +48,7 @@ public class SkinUpgradeService {
                         current.getDisplayName(),
                         current.getRarity(),
                         row.getExterior(),
+                        row.isStatTrack(),
                         currentPrice
                 ),
                 SUCCESS_CHANCE,
@@ -58,7 +61,8 @@ public class SkinUpgradeService {
         UserInventoryItem row = requireOwned(userId, inventoryItemId);
         Item current = requireItem(row.getItemId(), inventoryItemId);
 
-        BigDecimal currentPrice = SellPricing.sellPrice(current.getRarity(), row.getExterior());
+        BigDecimal currentPrice = SellPricing.sellPrice(
+                current.getRarity(), row.getExterior(), row.isStatTrack());
         List<UpgradeTarget> targets = findDearerTargets(currentPrice);
 
         if (targets.isEmpty()) {
@@ -74,10 +78,15 @@ public class SkinUpgradeService {
 
         userInventoryItemRepository.delete(row);
 
+        boolean statTrack = StatTrackRoller.roll();
+        BigDecimal price = SellPricing.sellPrice(
+                chosen.item().getRarity(), chosen.exterior(), statTrack);
+
         UserInventoryItem upgraded = new UserInventoryItem();
         upgraded.setUserId(userId);
         upgraded.setItemId(chosen.item().getId());
         upgraded.setExterior(chosen.exterior());
+        upgraded.setStatTrack(statTrack);
         upgraded = userInventoryItemRepository.save(upgraded);
 
         return new SkinUpgradeSuccessResponse(
@@ -86,7 +95,8 @@ public class SkinUpgradeService {
                 chosen.item().getDisplayName(),
                 chosen.item().getRarity(),
                 chosen.exterior(),
-                chosen.price()
+                statTrack,
+                price
         );
     }
 

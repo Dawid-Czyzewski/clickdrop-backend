@@ -26,6 +26,9 @@ public class UserInventoryItem {
     @Column(nullable = false, length = 32)
     private ItemExterior exterior;
 
+    @Column(name = "stat_track", nullable = false)
+    private boolean statTrack = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

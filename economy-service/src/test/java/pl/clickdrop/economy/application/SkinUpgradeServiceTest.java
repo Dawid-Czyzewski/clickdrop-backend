@@ -36,6 +36,7 @@ class SkinUpgradeServiceTest {
     @Mock UserInventoryItemRepository inventoryItemRepository;
     @Mock ItemRepository itemRepository;
     @Mock SkinUpgradeRng skinUpgradeRng;
+    @Mock StatTrackRoller StatTrackRoller;
 
     @InjectMocks
     SkinUpgradeService skinUpgradeService;
@@ -91,6 +92,7 @@ class SkinUpgradeServiceTest {
         when(itemRepository.findById(1L)).thenReturn(Optional.of(current));
         when(itemRepository.findByActiveTrueOrderByIdAsc()).thenReturn(List.of(current, dearer));
         when(skinUpgradeRng.rollSuccess()).thenReturn(true);
+        when(StatTrackRoller.roll()).thenReturn(false);
         when(inventoryItemRepository.save(any(UserInventoryItem.class))).thenAnswer(inv -> {
             UserInventoryItem saved = inv.getArgument(0);
             saved.setId(99L);
@@ -103,12 +105,14 @@ class SkinUpgradeServiceTest {
         SkinUpgradeSuccessResponse success = (SkinUpgradeSuccessResponse) result;
         assertThat(success.itemCode()).isEqualTo("AK_REDLINE");
         assertThat(success.exterior()).isEqualTo(ItemExterior.BATTLE_SCARRED);
+        assertThat(success.statTrack()).isFalse();
         assertThat(success.suggestedSellPrice()).isEqualByComparingTo("20.00");
 
         ArgumentCaptor<UserInventoryItem> captor = ArgumentCaptor.forClass(UserInventoryItem.class);
         verify(inventoryItemRepository).save(captor.capture());
         assertThat(captor.getValue().getItemId()).isEqualTo(2L);
         assertThat(captor.getValue().getExterior()).isEqualTo(ItemExterior.BATTLE_SCARRED);
+        assertThat(captor.getValue().isStatTrack()).isFalse();
         verify(skinUpgradeRng, never()).pickOne(any());
     }
 

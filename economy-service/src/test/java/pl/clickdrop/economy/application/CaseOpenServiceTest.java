@@ -46,6 +46,7 @@ class CaseOpenServiceTest {
     @Mock UserInventoryItemRepository inventoryItemRepository;
     @Mock WeightedPicker weightedPicker;
     @Mock ExteriorRoller exteriorRoller;
+    @Mock StatTrackRoller StatTrackRoller;
     @Mock CaseOpenRateLimiter caseOpenRateLimiter;
     @Mock AuthClient authClient;
 
@@ -65,6 +66,7 @@ class CaseOpenServiceTest {
         when(weightedPicker.pick(anyList(), any())).thenReturn(drop);
         when(itemRepository.findById(3L)).thenReturn(Optional.of(item));
         when(exteriorRoller.roll()).thenReturn(ItemExterior.FIELD_TESTED);
+        when(StatTrackRoller.roll()).thenReturn(false);
         when(walletRepository.save(any(Wallet.class))).thenAnswer(i -> i.getArgument(0));
         when(inventoryItemRepository.save(any(UserInventoryItem.class))).thenAnswer(i -> {
             UserInventoryItem row = i.getArgument(0);
@@ -81,6 +83,7 @@ class CaseOpenServiceTest {
         assertThat(res.itemDisplayName()).isEqualTo("AK REDLINE");
         assertThat(res.rarity()).isEqualTo(ItemRarity.RESTRICTED);
         assertThat(res.exterior()).isEqualTo(ItemExterior.FIELD_TESTED);
+        assertThat(res.statTrack()).isFalse();
         assertThat(res.cost()).isEqualByComparingTo("50.00");
         assertThat(res.balance()).isEqualByComparingTo("50.00");
         assertThat(res.suggestedSellPrice()).isEqualByComparingTo("40.00");
@@ -93,10 +96,40 @@ class CaseOpenServiceTest {
         assertThat(captor.getValue().getUserId()).isEqualTo(15L);
         assertThat(captor.getValue().getItemId()).isEqualTo(3L);
         assertThat(captor.getValue().getExterior()).isEqualTo(ItemExterior.FIELD_TESTED);
+        assertThat(captor.getValue().isStatTrack()).isFalse();
 
         verify(weightedPicker).pick(eq(List.of(drop)), any(ToIntFunction.class));
         verify(caseOpenRateLimiter).check(15L);
         verify(authClient).addExperience(15L, 10);
+    }
+
+    @Test
+    void open_statTrack_appliesSellMultiplier() {
+        GameCase gameCase = activeCase(1L, "50.00");
+        Wallet wallet = wallet(15L, "100.00");
+        CaseDrop drop = drop(10L, 1L, 3L, 15);
+        Item item = item(3L, "AK_REDLINE", ItemRarity.RESTRICTED);
+
+        when(gameCaseRepository.findById(1L)).thenReturn(Optional.of(gameCase));
+        when(walletRepository.findByUserId(15L)).thenReturn(Optional.of(wallet));
+        when(caseDropRepository.findByCaseId(1L)).thenReturn(List.of(drop));
+        when(weightedPicker.pick(anyList(), any())).thenReturn(drop);
+        when(itemRepository.findById(3L)).thenReturn(Optional.of(item));
+        when(exteriorRoller.roll()).thenReturn(ItemExterior.FIELD_TESTED);
+        when(StatTrackRoller.roll()).thenReturn(true);
+        when(walletRepository.save(any(Wallet.class))).thenAnswer(i -> i.getArgument(0));
+        when(inventoryItemRepository.save(any(UserInventoryItem.class))).thenAnswer(i -> {
+            UserInventoryItem row = i.getArgument(0);
+            row.setId(99L);
+            return row;
+        });
+        when(authClient.addExperience(15L, 10))
+                .thenReturn(new AuthExperienceResponse(1, 60, 10, false));
+
+        OpenCaseResponse res = caseOpenService.open(15L, 1L);
+
+        assertThat(res.statTrack()).isTrue();
+        assertThat(res.suggestedSellPrice()).isEqualByComparingTo("50.00");
     }
 
     @Test

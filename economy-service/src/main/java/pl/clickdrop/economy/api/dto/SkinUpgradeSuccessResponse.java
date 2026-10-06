@@ -11,5 +11,6 @@ public record SkinUpgradeSuccessResponse(
         String itemDisplayName,
         ItemRarity rarity,
         ItemExterior exterior,
+        boolean statTrack,
         BigDecimal suggestedSellPrice
 ) implements SkinUpgradeResponse {}

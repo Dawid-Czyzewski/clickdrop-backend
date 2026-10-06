@@ -13,6 +13,7 @@ public record InventoryItemResponse(
         String displayName,
         ItemRarity rarity,
         ItemExterior exterior,
+        boolean statTrack,
         BigDecimal suggestedSellPrice,
         Instant createdAt
 ) {

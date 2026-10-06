@@ -8,9 +8,15 @@ import java.math.RoundingMode;
 
 public final class SellPricing {
 
+    private static final BigDecimal STAT_TRACK_MULTIPLIER = new BigDecimal("1.25");
+
     private SellPricing() {}
 
     public static BigDecimal sellPrice(ItemRarity rarity, ItemExterior exterior) {
+        return sellPrice(rarity, exterior, false);
+    }
+
+    public static BigDecimal sellPrice(ItemRarity rarity, ItemExterior exterior, boolean statTrack) {
         BigDecimal base = switch (rarity) {
             case MIL_SPEC -> new BigDecimal("15");
             case RESTRICTED -> new BigDecimal("40");
@@ -26,6 +32,11 @@ public final class SellPricing {
             case BATTLE_SCARRED -> new BigDecimal("0.50");
         };
 
-        return base.multiply(multiplier).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal price = base.multiply(multiplier);
+        if (statTrack) {
+            price = price.multiply(STAT_TRACK_MULTIPLIER);
+        }
+
+        return price.setScale(2, RoundingMode.HALF_UP);
     }
 }

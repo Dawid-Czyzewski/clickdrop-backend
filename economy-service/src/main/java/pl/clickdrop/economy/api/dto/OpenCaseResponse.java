@@ -11,10 +11,11 @@ public record OpenCaseResponse(
         String itemDisplayName,
         ItemRarity rarity,
         ItemExterior exterior,
+        boolean statTrack,
         BigDecimal balance,
         BigDecimal cost,
         BigDecimal suggestedSellPrice,
-         Integer experienceGained,
+        Integer experienceGained,
         Integer level,
         Integer experience
 ) {

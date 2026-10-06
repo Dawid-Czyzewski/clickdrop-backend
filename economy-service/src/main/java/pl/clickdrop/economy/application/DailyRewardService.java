@@ -48,6 +48,7 @@ public class DailyRewardService {
     private final WalletRepository walletRepository;
     private final WeightedPicker weightedPicker;
     private final ExteriorRoller exteriorRoller;
+    private final StatTrackRoller StatTrackRoller;
 
     @Transactional(readOnly = true)
     public DailyStatusResponse status(Long userId) {
@@ -116,11 +117,13 @@ public class DailyRewardService {
                 .orElseThrow(() -> new CaseDropPoolEmptyException(0L));
 
         ItemExterior exterior = exteriorRoller.roll();
+        boolean statTrack = StatTrackRoller.roll();
 
         UserInventoryItem inventoryItem = new UserInventoryItem();
         inventoryItem.setUserId(userId);
         inventoryItem.setItemId(item.getId());
         inventoryItem.setExterior(exterior);
+        inventoryItem.setStatTrack(statTrack);
         inventoryItem = userInventoryItemRepository.save(inventoryItem);
 
         return new DailySkinClaimResponse(
@@ -129,7 +132,8 @@ public class DailyRewardService {
                 item.getDisplayName(),
                 item.getRarity(),
                 exterior,
-                SellPricing.sellPrice(item.getRarity(), exterior),
+                statTrack,
+                SellPricing.sellPrice(item.getRarity(), exterior, statTrack),
                 nextClaimAt
         );
     }

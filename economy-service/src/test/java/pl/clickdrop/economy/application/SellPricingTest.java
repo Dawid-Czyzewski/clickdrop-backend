@@ -29,4 +29,17 @@ class SellPricingTest {
         assertThat(SellPricing.sellPrice(ItemRarity.RESTRICTED, ItemExterior.MINIMAL_WEAR))
                 .isEqualByComparingTo("48.00");
     }
+
+    @Test
+    void milSpec_fieldTested_statTrack_isBaseTimes125() {
+        assertThat(SellPricing.sellPrice(ItemRarity.MIL_SPEC, ItemExterior.FIELD_TESTED, true))
+                .isEqualByComparingTo("18.75");
+    }
+
+    @Test
+    void twoArgOverload_matchesNonStatTrack() {
+        assertThat(SellPricing.sellPrice(ItemRarity.RESTRICTED, ItemExterior.FIELD_TESTED))
+                .isEqualByComparingTo(
+                        SellPricing.sellPrice(ItemRarity.RESTRICTED, ItemExterior.FIELD_TESTED, false));
+    }
 }

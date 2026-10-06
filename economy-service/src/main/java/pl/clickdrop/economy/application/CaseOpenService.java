@@ -38,6 +38,7 @@ public class CaseOpenService {
     private final UserInventoryItemRepository inventoryItemRepository;
     private final WeightedPicker weightedPicker;
     private final ExteriorRoller exteriorRoller;
+    private final StatTrackRoller StatTrackRoller;
     private final CaseOpenRateLimiter caseOpenRateLimiter;
     private final AuthClient authClient;
 
@@ -68,6 +69,7 @@ public class CaseOpenService {
                 .orElseThrow(() -> new CaseDropPoolEmptyException(caseId));
 
         ItemExterior exterior = exteriorRoller.roll();
+        boolean statTrack = StatTrackRoller.roll();
 
         wallet.setBalance(wallet.getBalance().subtract(cost));
         walletRepository.save(wallet);
@@ -76,9 +78,10 @@ public class CaseOpenService {
         inventoryItem.setUserId(userId);
         inventoryItem.setItemId(item.getId());
         inventoryItem.setExterior(exterior);
+        inventoryItem.setStatTrack(statTrack);
         inventoryItem = inventoryItemRepository.save(inventoryItem);
 
-        BigDecimal suggested = SellPricing.sellPrice(item.getRarity(), exterior);
+        BigDecimal suggested = SellPricing.sellPrice(item.getRarity(), exterior, statTrack);
 
         AuthExperienceResponse xp = authClient.addExperience(userId, CASE_OPEN_XP);
         if (xp == null) {
@@ -91,6 +94,7 @@ public class CaseOpenService {
                 item.getDisplayName(),
                 item.getRarity(),
                 exterior,
+                statTrack,
                 wallet.getBalance(),
                 cost,
                 suggested,
