@@ -133,7 +133,6 @@ class IdleIncomeServiceTest {
 
     @Test
     void collect_capsDeltaAt8Hours() {
-        // 0.1 / s × 28800 s = 2880.00 (nie więcej, mimo 2 dni AFK)
         Wallet wallet = wallet(15L, "0", Instant.now().minusSeconds(2L * 24 * 3600));
         UserUpgrade uu = userUpgrade(15L, 10L, 1);
         Upgrade botFarm = catalog(10L, "0", "0.1000");
@@ -170,6 +169,26 @@ class IdleIncomeServiceTest {
 
         assertThatThrownBy(() -> idleIncomeService.collect(99L))
                 .isInstanceOf(WalletNotFoundException.class);
+    }
+
+    @Test
+    void status_returnsPendingWithoutChangingWallet() {
+        Instant last = Instant.now().minusSeconds(10);
+        Wallet wallet = wallet(15L, "100", last);
+        UserUpgrade uu = userUpgrade(15L, 1L, 1);
+        Upgrade farm = catalog(1L, "0", "0.1000");
+
+        when(walletRepository.findByUserId(15L)).thenReturn(Optional.of(wallet));
+        when(userUpgradeRepository.findByUserId(15L)).thenReturn(List.of(uu));
+        when(upgradeRepository.findAllById(anyCollection())).thenReturn(List.of(farm));
+
+        var res = idleIncomeService.status(15L);
+
+        assertThat(res.pending()).isEqualByComparingTo("1.00");
+        assertThat(res.incomePerSecond()).isEqualByComparingTo("0.1000");
+        assertThat(res.lastIdleCollectedAt()).isEqualTo(last);
+        assertThat(wallet.getBalance()).isEqualByComparingTo("100");
+        assertThat(wallet.getLastIdleCollectedAt()).isEqualTo(last);
     }
 
     private static Wallet wallet(Long userId, String balance, Instant lastIdle) {

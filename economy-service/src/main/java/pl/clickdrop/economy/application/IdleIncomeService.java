@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.clickdrop.economy.api.dto.IdleCollectResponse;
+import pl.clickdrop.economy.api.dto.IdleStatusResponse;
 import pl.clickdrop.economy.application.exception.WalletNotFoundException;
 import pl.clickdrop.economy.domain.upgrade.Upgrade;
 import pl.clickdrop.economy.domain.upgrade.UpgradeRepository;
@@ -31,24 +32,26 @@ public class IdleIncomeService {
     private final UserUpgradeRepository userUpgradeRepository;
     private final UpgradeRepository upgradeRepository;
 
+    @Transactional(readOnly = true)
+    public IdleStatusResponse status(Long userId) {
+        Wallet wallet = walletRepository.findByUserId(userId)
+                .orElseThrow(() -> new WalletNotFoundException(userId));
+
+        Instant now = Instant.now();
+        BigDecimal rate = currentIncomePerSecond(userId);
+        BigDecimal pending = pendingAmount(wallet.getLastIdleCollectedAt(), now, rate);
+
+        return new IdleStatusResponse(pending, rate, wallet.getLastIdleCollectedAt());
+    }
+
     @Transactional
     public IdleCollectResponse collect(Long userId) {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new WalletNotFoundException(userId));
 
         Instant now = Instant.now();
-        long seconds = Duration.between(wallet.getLastIdleCollectedAt(), now).getSeconds();
-
-        if (seconds < 0) {
-            seconds = 0;
-        }
-
-        seconds = Math.min(seconds, MAX_IDLE_SECONDS);
-
         BigDecimal rate = currentIncomePerSecond(userId);
-        BigDecimal earned = rate
-                .multiply(BigDecimal.valueOf(seconds))
-                .setScale(2, RoundingMode.HALF_UP);
+        BigDecimal earned = pendingAmount(wallet.getLastIdleCollectedAt(), now, rate);
 
         if (earned.signum() > 0) {
             wallet.setBalance(wallet.getBalance().add(earned));
@@ -90,5 +93,17 @@ public class IdleIncomeService {
         }
 
         return rate.setScale(4, RoundingMode.HALF_UP);
+    }
+
+    private static BigDecimal pendingAmount(Instant lastCollectedAt, Instant now, BigDecimal rate) {
+        long seconds = Duration.between(lastCollectedAt, now).getSeconds();
+        if (seconds < 0) {
+            seconds = 0;
+        }
+        seconds = Math.min(seconds, MAX_IDLE_SECONDS);
+
+        return rate
+                .multiply(BigDecimal.valueOf(seconds))
+                .setScale(2, RoundingMode.HALF_UP);
     }
 }
