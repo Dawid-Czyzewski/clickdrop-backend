@@ -19,6 +19,7 @@ import pl.clickdrop.economy.domain.inventory.UserInventoryItemRepository;
 import pl.clickdrop.economy.domain.item.Item;
 import pl.clickdrop.economy.domain.item.ItemExterior;
 import pl.clickdrop.economy.domain.item.ItemRepository;
+import pl.clickdrop.economy.domain.recent.RecentDropSource;
 import pl.clickdrop.economy.domain.wallet.Wallet;
 import pl.clickdrop.economy.domain.wallet.WalletRepository;
 
@@ -41,6 +42,7 @@ public class CaseOpenService {
     private final StatTrackRoller StatTrackRoller;
     private final CaseOpenRateLimiter caseOpenRateLimiter;
     private final AuthClient authClient;
+    private final RecentDropRecorder recentDropRecorder;
 
     @Transactional
     public OpenCaseResponse open(Long userId, Long caseId) {
@@ -80,6 +82,8 @@ public class CaseOpenService {
         inventoryItem.setExterior(exterior);
         inventoryItem.setStatTrack(statTrack);
         inventoryItem = inventoryItemRepository.save(inventoryItem);
+
+        recentDropRecorder.record(userId, item, exterior, statTrack, RecentDropSource.CASE);
 
         BigDecimal suggested = SellPricing.sellPrice(item.getRarity(), exterior, statTrack);
 

@@ -23,6 +23,7 @@ import pl.clickdrop.economy.domain.inventory.UserInventoryItemRepository;
 import pl.clickdrop.economy.domain.item.Item;
 import pl.clickdrop.economy.domain.item.ItemExterior;
 import pl.clickdrop.economy.domain.item.ItemRepository;
+import pl.clickdrop.economy.domain.recent.RecentDropSource;
 import pl.clickdrop.economy.domain.wallet.Wallet;
 import pl.clickdrop.economy.domain.wallet.WalletRepository;
 
@@ -49,6 +50,7 @@ public class DailyRewardService {
     private final WeightedPicker weightedPicker;
     private final ExteriorRoller exteriorRoller;
     private final StatTrackRoller StatTrackRoller;
+    private final RecentDropRecorder recentDropRecorder;
 
     @Transactional(readOnly = true)
     public DailyStatusResponse status(Long userId) {
@@ -125,6 +127,8 @@ public class DailyRewardService {
         inventoryItem.setExterior(exterior);
         inventoryItem.setStatTrack(statTrack);
         inventoryItem = userInventoryItemRepository.save(inventoryItem);
+
+        recentDropRecorder.record(userId, item, exterior, statTrack, RecentDropSource.CASE);
 
         return new DailySkinClaimResponse(
                 inventoryItem.getId(),

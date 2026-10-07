@@ -40,6 +40,7 @@ public class SecurityConfig {
                                 "/api/economy/cases/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/economy/daily/drops").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/economy/drops/recent").permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/economy/items",
                                 "/api/economy/items/**"
@@ -48,7 +49,6 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
 
