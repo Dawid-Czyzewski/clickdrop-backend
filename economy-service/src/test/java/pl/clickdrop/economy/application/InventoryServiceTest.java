@@ -6,7 +6,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import pl.clickdrop.economy.api.dto.InventoryItemResponse;
+import pl.clickdrop.economy.api.dto.SellInventoryBatchRequest;
+import pl.clickdrop.economy.api.dto.SellInventoryBatchResponse;
 import pl.clickdrop.economy.api.dto.SellInventoryItemResponse;
+import pl.clickdrop.economy.api.dto.SellSkipReason;
+import pl.clickdrop.economy.application.exception.InvalidSellBatchException;
 import pl.clickdrop.economy.application.exception.InventoryItemNotFoundException;
 import pl.clickdrop.economy.domain.inventory.UserInventoryItem;
 import pl.clickdrop.economy.domain.inventory.UserInventoryItemRepository;
@@ -19,6 +23,8 @@ import pl.clickdrop.economy.domain.wallet.WalletRepository;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -101,7 +107,7 @@ class InventoryServiceTest {
 
         assertThat(res.soldFor()).isEqualByComparingTo("350.00");
         assertThat(res.balance()).isEqualByComparingTo("360.00");
-        verify(inventoryItemRepository).delete(row);
+        verify(inventoryItemRepository).deleteAll(List.of(row));
         verify(walletRepository).save(wallet);
     }
 
@@ -113,7 +119,76 @@ class InventoryServiceTest {
                 .isInstanceOf(InventoryItemNotFoundException.class);
 
         verify(walletRepository, never()).save(any());
-        verify(inventoryItemRepository, never()).delete(any());
+        verify(inventoryItemRepository, never()).deleteAll(any());
+    }
+
+    @Test
+    void sellBatch_sellsThreeOwnedItems() {
+        UserInventoryItem a = inventoryRow(1L, 15L, 3L, ItemExterior.FIELD_TESTED);
+        UserInventoryItem b = inventoryRow(2L, 15L, 3L, ItemExterior.FIELD_TESTED);
+        UserInventoryItem c = inventoryRow(3L, 15L, 3L, ItemExterior.FIELD_TESTED);
+        Item item = item(3L, "AK_REDLINE", ItemRarity.RESTRICTED);
+        Wallet wallet = wallet(15L, "100.00");
+
+        when(walletRepository.findByUserId(15L)).thenReturn(Optional.of(wallet));
+        when(inventoryItemRepository.findAllById(List.of(1L, 2L, 3L)))
+                .thenReturn(List.of(a, b, c));
+        when(itemRepository.findAllById(anyCollection())).thenReturn(List.of(item));
+        when(walletRepository.save(any(Wallet.class))).thenAnswer(i -> i.getArgument(0));
+
+        SellInventoryBatchResponse res = inventoryService.sellBatch(
+                15L, new SellInventoryBatchRequest(List.of(1L, 2L, 3L)));
+
+        assertThat(res.soldCount()).isEqualTo(3);
+        assertThat(res.totalEarned()).isEqualByComparingTo("120.00");
+        assertThat(res.balance()).isEqualByComparingTo("220.00");
+        assertThat(res.sold()).hasSize(3);
+        assertThat(res.skipped()).isEmpty();
+        verify(inventoryItemRepository).deleteAll(List.of(a, b, c));
+    }
+
+    @Test
+    void sellBatch_mixOwnedForeignMissing_bestEffort() {
+        UserInventoryItem owned = inventoryRow(1L, 15L, 3L, ItemExterior.FIELD_TESTED);
+        UserInventoryItem foreign = inventoryRow(2L, 99L, 3L, ItemExterior.FIELD_TESTED);
+        Item item = item(3L, "AK_REDLINE", ItemRarity.RESTRICTED);
+        Wallet wallet = wallet(15L, "10.00");
+
+        when(walletRepository.findByUserId(15L)).thenReturn(Optional.of(wallet));
+        when(inventoryItemRepository.findAllById(List.of(1L, 2L, 3L)))
+                .thenReturn(List.of(owned, foreign));
+        when(itemRepository.findAllById(anyCollection())).thenReturn(List.of(item));
+        when(walletRepository.save(any(Wallet.class))).thenAnswer(i -> i.getArgument(0));
+
+        SellInventoryBatchResponse res = inventoryService.sellBatch(
+                15L, new SellInventoryBatchRequest(List.of(1L, 2L, 3L)));
+
+        assertThat(res.soldCount()).isEqualTo(1);
+        assertThat(res.totalEarned()).isEqualByComparingTo("40.00");
+        assertThat(res.balance()).isEqualByComparingTo("50.00");
+        assertThat(res.skipped()).extracting(s -> s.reason())
+                .containsExactly(SellSkipReason.NOT_OWNED, SellSkipReason.NOT_FOUND);
+        verify(inventoryItemRepository).deleteAll(List.of(owned));
+    }
+
+    @Test
+    void sellBatch_rejectsOverLimit() {
+        List<Long> ids = new ArrayList<>(Collections.nCopies(51, 1L));
+
+        assertThatThrownBy(() -> inventoryService.sellBatch(
+                15L, new SellInventoryBatchRequest(ids)))
+                .isInstanceOf(InvalidSellBatchException.class);
+
+        verifyNoInteractions(walletRepository, inventoryItemRepository, itemRepository);
+    }
+
+    @Test
+    void sellBatch_rejectsEmpty() {
+        assertThatThrownBy(() -> inventoryService.sellBatch(
+                15L, new SellInventoryBatchRequest(List.of())))
+                .isInstanceOf(InvalidSellBatchException.class);
+
+        verifyNoInteractions(walletRepository, inventoryItemRepository, itemRepository);
     }
 
     private static UserInventoryItem inventoryRow(
