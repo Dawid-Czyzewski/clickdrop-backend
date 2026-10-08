@@ -7,4 +7,10 @@ import java.util.List;
 
 public interface RecentDropRepository extends JpaRepository<RecentDrop, Long> {
     List<RecentDrop> findAllByOrderByCreatedAtDesc(Pageable pageable);
+
+    List<RecentDrop> findByUserIdAndSourceOrderByCreatedAtDesc(
+            Long userId,
+            RecentDropSource source,
+            Pageable pageable
+    );
 }
