@@ -13,9 +13,9 @@ import pl.clickdrop.economy.domain.cases.GameCaseRepository;
 import pl.clickdrop.economy.domain.item.Item;
 import pl.clickdrop.economy.domain.item.ItemRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -41,7 +41,6 @@ public class CaseCatalogService {
                 .orElseThrow(() -> new CaseNotFoundException(caseId));
 
         List<CaseDrop> drops = caseDropRepository.findByCaseId(gameCase.getId());
-
         if (drops.isEmpty()) {
             return List.of();
         }
@@ -50,23 +49,33 @@ public class CaseCatalogService {
                 drops.stream().map(CaseDrop::getItemId).toList()
         ).stream().collect(Collectors.toMap(Item::getId, Function.identity()));
 
-        return drops.stream()
-                .map(drop -> {
-                    Item item = itemsById.get(drop.getItemId());
+        record Resolved(CaseDrop drop, Item item) {}
 
-                    if (item == null || !item.isActive()) {
-                        return null;
-                    }
+        List<Resolved> resolved = new ArrayList<>();
+        for (CaseDrop drop : drops) {
+            Item item = itemsById.get(drop.getItemId());
+            if (item != null && item.isActive()) {
+                resolved.add(new Resolved(drop, item));
+            }
+        }
 
-                    return new CaseDropResponse(
-                            item.getId(),
-                            item.getCode(),
-                            item.getDisplayName(),
-                            item.getRarity(),
-                            drop.getWeight()
-                    );
-                })
-                .filter(Objects::nonNull)
+        if (resolved.isEmpty()) {
+            return List.of();
+        }
+
+        int totalWeight = resolved.stream()
+                .mapToInt(r -> r.drop().getWeight())
+                .sum();
+
+        return resolved.stream()
+                .map(r -> new CaseDropResponse(
+                        r.item().getId(),
+                        r.item().getCode(),
+                        r.item().getDisplayName(),
+                        r.item().getRarity(),
+                        r.drop().getWeight(),
+                        DropChance.percent(r.drop().getWeight(), totalWeight)
+                ))
                 .toList();
     }
 

@@ -34,22 +34,31 @@ class CaseCatalogServiceDropsTest {
     CaseCatalogService caseCatalogService;
 
     @Test
-    void listDrops_returnsItemsWithWeight() {
-        GameCase anvil = new GameCase();
-        anvil.setId(1L);
-        anvil.setActive(true);
+    void listDrops_returnsWeightAndChancePercent() {
+        GameCase anvil = activeCase(1L);
+        CaseDrop a = drop(1L, 3L, 15);
+        CaseDrop b = drop(1L, 4L, 45);
+        Item ak = item(3L, "AK_REDLINE", "AK-47 | Redline", ItemRarity.RESTRICTED);
+        Item awp = item(4L, "AWP_ASIIMOV", "AWP | Asiimov", ItemRarity.COVERT);
 
-        CaseDrop drop = new CaseDrop();
-        drop.setCaseId(1L);
-        drop.setItemId(3L);
-        drop.setWeight(15);
+        when(gameCaseRepository.findById(1L)).thenReturn(Optional.of(anvil));
+        when(caseDropRepository.findByCaseId(1L)).thenReturn(List.of(a, b));
+        when(itemRepository.findAllById(anyCollection())).thenReturn(List.of(ak, awp));
 
-        Item ak = new Item();
-        ak.setId(3L);
-        ak.setCode("AK_REDLINE");
-        ak.setDisplayName("AK-47 | Redline");
-        ak.setRarity(ItemRarity.RESTRICTED);
-        ak.setActive(true);
+        List<CaseDropResponse> result = caseCatalogService.listDrops(1L);
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).weight()).isEqualTo(15);
+        assertThat(result.get(0).chancePercent()).isEqualByComparingTo("25.00");
+        assertThat(result.get(1).weight()).isEqualTo(45);
+        assertThat(result.get(1).chancePercent()).isEqualByComparingTo("75.00");
+    }
+
+    @Test
+    void listDrops_singleItem_is100Percent() {
+        GameCase anvil = activeCase(1L);
+        CaseDrop drop = drop(1L, 3L, 15);
+        Item ak = item(3L, "AK_REDLINE", "AK-47 | Redline", ItemRarity.RESTRICTED);
 
         when(gameCaseRepository.findById(1L)).thenReturn(Optional.of(anvil));
         when(caseDropRepository.findByCaseId(1L)).thenReturn(List.of(drop));
@@ -58,11 +67,8 @@ class CaseCatalogServiceDropsTest {
         List<CaseDropResponse> result = caseCatalogService.listDrops(1L);
 
         assertThat(result).hasSize(1);
-        assertThat(result.getFirst().itemId()).isEqualTo(3L);
-        assertThat(result.getFirst().code()).isEqualTo("AK_REDLINE");
-        assertThat(result.getFirst().displayName()).isEqualTo("AK-47 | Redline");
-        assertThat(result.getFirst().rarity()).isEqualTo(ItemRarity.RESTRICTED);
         assertThat(result.getFirst().weight()).isEqualTo(15);
+        assertThat(result.getFirst().chancePercent()).isEqualByComparingTo("100.00");
     }
 
     @Test
@@ -75,12 +81,36 @@ class CaseCatalogServiceDropsTest {
 
     @Test
     void listDrops_throws_whenCaseInactive() {
-        GameCase inactive = new GameCase();
-        inactive.setId(1L);
+        GameCase inactive = activeCase(1L);
         inactive.setActive(false);
         when(gameCaseRepository.findById(1L)).thenReturn(Optional.of(inactive));
 
         assertThatThrownBy(() -> caseCatalogService.listDrops(1L))
                 .isInstanceOf(CaseNotFoundException.class);
+    }
+
+    private static GameCase activeCase(Long id) {
+        GameCase c = new GameCase();
+        c.setId(id);
+        c.setActive(true);
+        return c;
+    }
+
+    private static CaseDrop drop(Long caseId, Long itemId, int weight) {
+        CaseDrop d = new CaseDrop();
+        d.setCaseId(caseId);
+        d.setItemId(itemId);
+        d.setWeight(weight);
+        return d;
+    }
+
+    private static Item item(Long id, String code, String name, ItemRarity rarity) {
+        Item i = new Item();
+        i.setId(id);
+        i.setCode(code);
+        i.setDisplayName(name);
+        i.setRarity(rarity);
+        i.setActive(true);
+        return i;
     }
 }
