@@ -6,9 +6,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import pl.clickdrop.auth.api.dto.LeaderboardEntryResponse;
 import pl.clickdrop.auth.api.dto.UserResponse;
 import pl.clickdrop.auth.application.UserService;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -21,5 +25,12 @@ public class UserController {
     public ResponseEntity<UserResponse> me(Authentication authentication) {
         String email = authentication.getName();
         return ResponseEntity.ok(userService.getCurrentUser(email));
+    }
+
+    @GetMapping("/leaderboard")
+    public ResponseEntity<List<LeaderboardEntryResponse>> leaderboard(
+            @RequestParam(required = false) Integer limit
+    ) {
+        return ResponseEntity.ok(userService.leaderboard(limit));
     }
 }
