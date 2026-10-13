@@ -91,4 +91,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("message", ex.getMessage()));
     }
+
+    @ExceptionHandler(InvalidCaseOpenCountException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidCaseOpenCount(
+            InvalidCaseOpenCountException ex
+    ) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("message", ex.getMessage()));
+    }
 }

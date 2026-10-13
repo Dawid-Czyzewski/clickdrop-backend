@@ -3,12 +3,14 @@ package pl.clickdrop.economy.application;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pl.clickdrop.economy.api.dto.OpenCaseResponse;
+import pl.clickdrop.economy.api.dto.OpenCasesResponse;
+import pl.clickdrop.economy.api.dto.OpenedCaseDropResponse;
 import pl.clickdrop.economy.application.client.AuthClient;
 import pl.clickdrop.economy.application.client.AuthExperienceResponse;
 import pl.clickdrop.economy.application.exception.CaseDropPoolEmptyException;
 import pl.clickdrop.economy.application.exception.CaseNotFoundException;
 import pl.clickdrop.economy.application.exception.InsufficientFundsException;
+import pl.clickdrop.economy.application.exception.InvalidCaseOpenCountException;
 import pl.clickdrop.economy.application.exception.WalletNotFoundException;
 import pl.clickdrop.economy.domain.cases.CaseDrop;
 import pl.clickdrop.economy.domain.cases.CaseDropRepository;
@@ -24,12 +26,18 @@ import pl.clickdrop.economy.domain.wallet.Wallet;
 import pl.clickdrop.economy.domain.wallet.WalletRepository;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class CaseOpenService {
 
+    static final int MIN_OPEN_COUNT = 1;
+    static final int MAX_OPEN_COUNT = 5;
     private static final int CASE_OPEN_XP = 10;
 
     private final GameCaseRepository gameCaseRepository;
@@ -45,7 +53,13 @@ public class CaseOpenService {
     private final RecentDropRecorder recentDropRecorder;
 
     @Transactional
-    public OpenCaseResponse open(Long userId, Long caseId) {
+    public OpenCasesResponse open(Long userId, Long caseId) {
+        return open(userId, caseId, 1);
+    }
+
+    @Transactional
+    public OpenCasesResponse open(Long userId, Long caseId, Integer count) {
+        int opens = normalizeCount(count);
         caseOpenRateLimiter.check(userId);
 
         GameCase gameCase = gameCaseRepository.findById(caseId)
@@ -55,26 +69,59 @@ public class CaseOpenService {
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new WalletNotFoundException(userId));
 
-        BigDecimal cost = gameCase.getPrice();
-        if (wallet.getBalance().compareTo(cost) < 0) {
+        BigDecimal unitPrice = gameCase.getPrice();
+        BigDecimal totalCost = unitPrice.multiply(BigDecimal.valueOf(opens));
+        if (wallet.getBalance().compareTo(totalCost) < 0) {
             throw new InsufficientFundsException();
         }
 
-        List<CaseDrop> drops = caseDropRepository.findByCaseId(caseId);
-        if (drops.isEmpty()) {
+        List<CaseDrop> pool = caseDropRepository.findByCaseId(caseId);
+        if (pool.isEmpty()) {
             throw new CaseDropPoolEmptyException(caseId);
         }
 
-        CaseDrop chosenDrop = weightedPicker.pick(drops, CaseDrop::getWeight);
-        Item item = itemRepository.findById(chosenDrop.getItemId())
-                .filter(Item::isActive)
-                .orElseThrow(() -> new CaseDropPoolEmptyException(caseId));
+        Map<Long, Item> itemsById = itemRepository.findAllById(
+                pool.stream().map(CaseDrop::getItemId).distinct().toList()
+        ).stream().collect(Collectors.toMap(Item::getId, Function.identity()));
+
+        List<OpenedCaseDropResponse> opened = new ArrayList<>(opens);
+        for (int i = 0; i < opens; i++) {
+            opened.add(rollOne(userId, caseId, pool, itemsById));
+        }
+
+        wallet.setBalance(wallet.getBalance().subtract(totalCost));
+        walletRepository.save(wallet);
+
+        AuthExperienceResponse xp = authClient.addExperience(userId, CASE_OPEN_XP * opens);
+        if (xp == null) {
+            throw new IllegalStateException("Auth experience response was null for userId=" + userId);
+        }
+
+        return new OpenCasesResponse(
+                opens,
+                totalCost,
+                wallet.getBalance(),
+                List.copyOf(opened),
+                xp.experienceGained(),
+                xp.level(),
+                xp.experience()
+        );
+    }
+
+    private OpenedCaseDropResponse rollOne(
+            Long userId,
+            Long caseId,
+            List<CaseDrop> pool,
+            Map<Long, Item> itemsById
+    ) {
+        CaseDrop chosen = weightedPicker.pick(pool, CaseDrop::getWeight);
+        Item item = itemsById.get(chosen.getItemId());
+        if (item == null || !item.isActive()) {
+            throw new CaseDropPoolEmptyException(caseId);
+        }
 
         ItemExterior exterior = exteriorRoller.roll();
         boolean statTrack = StatTrackRoller.roll();
-
-        wallet.setBalance(wallet.getBalance().subtract(cost));
-        walletRepository.save(wallet);
 
         UserInventoryItem inventoryItem = new UserInventoryItem();
         inventoryItem.setUserId(userId);
@@ -85,26 +132,22 @@ public class CaseOpenService {
 
         recentDropRecorder.record(userId, item, exterior, statTrack, RecentDropSource.CASE);
 
-        BigDecimal suggested = SellPricing.sellPrice(item.getRarity(), exterior, statTrack);
-
-        AuthExperienceResponse xp = authClient.addExperience(userId, CASE_OPEN_XP);
-        if (xp == null) {
-            throw new IllegalStateException("Auth experience response was null for userId=" + userId);
-        }
-
-        return new OpenCaseResponse(
+        return new OpenedCaseDropResponse(
                 inventoryItem.getId(),
                 item.getCode(),
                 item.getDisplayName(),
                 item.getRarity(),
                 exterior,
                 statTrack,
-                wallet.getBalance(),
-                cost,
-                suggested,
-                xp.experienceGained(),
-                xp.level(),
-                xp.experience()
+                SellPricing.sellPrice(item.getRarity(), exterior, statTrack)
         );
+    }
+
+    private static int normalizeCount(Integer count) {
+        int value = count == null ? MIN_OPEN_COUNT : count;
+        if (value < MIN_OPEN_COUNT || value > MAX_OPEN_COUNT) {
+            throw new InvalidCaseOpenCountException();
+        }
+        return value;
     }
 }

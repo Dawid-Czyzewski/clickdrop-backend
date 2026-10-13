@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import pl.clickdrop.economy.api.dto.CaseDropResponse;
 import pl.clickdrop.economy.api.dto.CaseOpenHistoryItemResponse;
 import pl.clickdrop.economy.api.dto.CaseResponse;
-import pl.clickdrop.economy.api.dto.OpenCaseResponse;
+import pl.clickdrop.economy.api.dto.OpenCasesResponse;
 import pl.clickdrop.economy.application.CaseCatalogService;
 import pl.clickdrop.economy.application.CaseOpenHistoryService;
 import pl.clickdrop.economy.application.CaseOpenService;
@@ -43,11 +43,12 @@ public class CaseController {
     }
 
     @PostMapping("/{caseId}/open")
-    public ResponseEntity<OpenCaseResponse> open(
+    public ResponseEntity<OpenCasesResponse> open(
             Authentication authentication,
-            @PathVariable Long caseId
+            @PathVariable Long caseId,
+            @RequestParam(required = false) Integer count
     ) {
         Long userId = (Long) authentication.getPrincipal();
-        return ResponseEntity.ok(caseOpenService.open(userId, caseId));
+        return ResponseEntity.ok(caseOpenService.open(userId, caseId, count));
     }
 }
