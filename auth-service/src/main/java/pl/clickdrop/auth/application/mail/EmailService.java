@@ -67,7 +67,7 @@ public class EmailService {
     public String buildPasswordResetLink(String rawToken) {
         String base = frontendBaseUrl.endsWith("/") ? frontendBaseUrl : frontendBaseUrl + "/";
         String encodedToken = URLEncoder.encode(rawToken, StandardCharsets.UTF_8);
-        return base + "reset-password?token" + encodedToken;
+        return base + "reset-password?token=" + encodedToken;
     }
 
     public String buildActivationLink(String rawToken) {

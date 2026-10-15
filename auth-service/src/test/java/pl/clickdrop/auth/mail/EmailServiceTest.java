@@ -58,4 +58,13 @@ class EmailServiceTest {
 
         assertThat(link).isEqualTo("http://localhost:5173/verify-email?token=abc%2B123%2Fx");
     }
+
+    @Test
+    void buildPasswordResetLink_addsSlashAndEncodesToken() {
+        ReflectionTestUtils.setField(emailService, "frontendBaseUrl", "http://localhost:5173");
+
+        String link = emailService.buildPasswordResetLink("abc+123/x");
+
+        assertThat(link).isEqualTo("http://localhost:5173/reset-password?token=abc%2B123%2Fx");
+    }
 }
