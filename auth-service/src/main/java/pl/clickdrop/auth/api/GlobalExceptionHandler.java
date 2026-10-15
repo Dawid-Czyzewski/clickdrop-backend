@@ -77,4 +77,20 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("message", "Invalid refresh token"));
     }
+
+    @ExceptionHandler(InvalidPasswordResetTokenException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidResetToken(
+            InvalidPasswordResetTokenException ex
+    ) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(ExpiredPasswordResetTokenException.class)
+    public ResponseEntity<Map<String, String>> handleExpiredResetToken(
+            ExpiredPasswordResetTokenException ex
+    ) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("message", ex.getMessage()));
+    }
 }

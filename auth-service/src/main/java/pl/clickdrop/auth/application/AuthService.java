@@ -12,6 +12,7 @@ import pl.clickdrop.auth.application.mail.EmailService;
 import pl.clickdrop.auth.application.security.JwtService;
 import pl.clickdrop.auth.application.security.RefreshTokenService;
 import pl.clickdrop.auth.application.verification.EmailVerificationTokenService;
+import pl.clickdrop.auth.domain.passwordreset.PasswordResetToken;
 import pl.clickdrop.auth.domain.token.RefreshToken;
 import pl.clickdrop.auth.domain.user.Role;
 import pl.clickdrop.auth.domain.user.User;
@@ -31,6 +32,7 @@ public class AuthService {
     private final EmailService emailService;
     private final RefreshTokenService refreshTokenService;
     private final EconomyClient economyClient;
+    private final PasswordResetTokenService passwordResetTokenService;
 
     public LoginResponse login(LoginRequest loginRequest) {
         User user = userRepository.findByEmail(loginRequest.email()).
@@ -125,5 +127,31 @@ public class AuthService {
 
     public void revokeRefreshToken(RefreshTokenRequest request) {
         refreshTokenService.revoke(request.refreshToken());
+    }
+
+    public void forgotPassword(ForgotPasswordRequest request) throws MessagingException {
+        var userOpt = userRepository.findByEmail(request.email());
+
+        if (userOpt.isEmpty()) {
+            return;
+        }
+        User user = userOpt.get();
+        passwordResetTokenService.invalidateActiveTokens(user);
+        PasswordResetToken token = passwordResetTokenService.createFor(user);
+
+        emailService.sendPasswordReset(
+                user.getEmail(),
+                user.getUsername(),
+                token.getToken()
+        );
+    }
+
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        User user = passwordResetTokenService.consume(request.token());
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+
+        userRepository.save(user);
+        refreshTokenService.revokeAllForUser(user);
     }
 }

@@ -45,6 +45,31 @@ public class EmailService {
         mailSender.send(message);
     }
 
+    public void sendPasswordReset(String toEmail, String username, String rawToken) throws MessagingException {
+        String activationLink = buildPasswordResetLink(rawToken);
+
+        Context ctx = new Context();
+        ctx.setVariable("username", username);
+        ctx.setVariable("activationLink", activationLink);
+
+        String html = templateEngine.process("mail/password-reset", ctx);
+
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, "UTF-8");
+        helper.setFrom(from);
+        helper.setTo(toEmail);
+        helper.setSubject("Reset your ClickDrop password");
+        helper.setText(html, true);
+
+        mailSender.send(message);
+    }
+
+    public String buildPasswordResetLink(String rawToken) {
+        String base = frontendBaseUrl.endsWith("/") ? frontendBaseUrl : frontendBaseUrl + "/";
+        String encodedToken = URLEncoder.encode(rawToken, StandardCharsets.UTF_8);
+        return base + "reset-password?token" + encodedToken;
+    }
+
     public String buildActivationLink(String rawToken) {
         String base = frontendBaseUrl.endsWith("/") ? frontendBaseUrl : frontendBaseUrl + "/";
         String encodedToken = URLEncoder.encode(rawToken, StandardCharsets.UTF_8);

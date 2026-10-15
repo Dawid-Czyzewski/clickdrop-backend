@@ -50,10 +50,27 @@ public class AuthController {
         return ResponseEntity.ok(authService.refresh(request));
     }
 
+    @PostMapping("/logout")
     public ResponseEntity<Void> logout(
         @Valid @RequestBody RefreshTokenRequest request
     ) {
         authService.revokeRefreshToken(request);
         return  ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Void> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request
+    ) throws MessagingException {
+        authService.forgotPassword(request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("reset-password")
+    public ResponseEntity<Void> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request
+    ) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok().build();
     }
 }
