@@ -1,4 +1,4 @@
-package pl.clickdrop.auth.application;
+package pl.clickdrop.auth.api;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -6,6 +6,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import pl.clickdrop.auth.application.PasswordResetTokenService;
 import pl.clickdrop.auth.application.exception.ExpiredPasswordResetTokenException;
 import pl.clickdrop.auth.application.exception.InvalidPasswordResetTokenException;
 import pl.clickdrop.auth.domain.passwordreset.PasswordResetToken;
