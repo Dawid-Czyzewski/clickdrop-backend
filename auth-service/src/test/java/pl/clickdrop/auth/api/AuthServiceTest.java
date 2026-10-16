@@ -342,4 +342,27 @@ class AuthServiceTest {
                 new ChangePasswordRequest("OldPass123!", "NewPass123!")
         )).isInstanceOf(UserNotFoundException.class);
     }
+
+    @Test
+    void logoutAll_revokesAllRefreshTokensForUser() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("player@clickdrop.pl");
+
+        when(userRepository.findByEmail("player@clickdrop.pl")).thenReturn(Optional.of(user));
+
+        authService.logoutAll("player@clickdrop.pl");
+
+        verify(refreshTokenService).revokeAllForUser(user);
+    }
+
+    @Test
+    void logoutAll_throws_whenUserMissing() {
+        when(userRepository.findByEmail("missing@clickdrop.pl")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authService.logoutAll("missing@clickdrop.pl"))
+                .isInstanceOf(UserNotFoundException.class);
+
+        verify(refreshTokenService, never()).revokeAllForUser(any());
+    }
 }

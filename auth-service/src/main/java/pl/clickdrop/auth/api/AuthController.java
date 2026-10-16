@@ -83,4 +83,10 @@ public class AuthController {
         authService.changePassword(authentication.getName(), request);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/logout-all")
+    public ResponseEntity<Void> logoutAll(Authentication authentication) {
+        authService.logoutAll(authentication.getName());
+        return ResponseEntity.noContent().build();
+    }
 }

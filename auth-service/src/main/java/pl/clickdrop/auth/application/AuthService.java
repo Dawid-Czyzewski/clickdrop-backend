@@ -167,4 +167,11 @@ public class AuthService {
         userRepository.save(user);
         refreshTokenService.revokeAllForUser(user);
     }
+
+    @Transactional
+    public void logoutAll(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(UserNotFoundException::new);
+        refreshTokenService.revokeAllForUser(user);
+    }
 }

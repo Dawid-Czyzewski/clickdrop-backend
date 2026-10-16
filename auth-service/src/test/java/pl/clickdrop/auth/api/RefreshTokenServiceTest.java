@@ -15,6 +15,7 @@ import pl.clickdrop.auth.domain.user.User;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -99,5 +100,38 @@ class RefreshTokenServiceTest {
 
         assertThat(token.getRevokedAt()).isNotNull();
         verify(repository).save(token);
+    }
+
+    @Test
+    void revokeAllForUser_marksActiveTokensRevoked() {
+        User user = new User();
+        user.setId(1L);
+
+        RefreshToken active = new RefreshToken();
+        active.setUser(user);
+        active.setRevokedAt(null);
+        active.setExpirationDate(Instant.now().plusSeconds(3600));
+
+        when(repository.findAllByUserAndRevokedAtIsNull(user)).thenReturn(List.of(active));
+        when(repository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        service.revokeAllForUser(user);
+
+        assertThat(active.getRevokedAt()).isNotNull();
+        assertThat(active.isValid()).isFalse();
+        verify(repository).saveAll(List.of(active));
+    }
+
+    @Test
+    void verify_throws_whenTokenRevoked() {
+        RefreshToken token = new RefreshToken();
+        token.setToken("revoked");
+        token.setRevokedAt(Instant.now());
+        token.setExpirationDate(Instant.now().plusSeconds(3600));
+
+        when(repository.findByToken("revoked")).thenReturn(Optional.of(token));
+
+        assertThatThrownBy(() -> service.verify("revoked"))
+                .isInstanceOf(InvalidRefreshTokenException.class);
     }
 }
