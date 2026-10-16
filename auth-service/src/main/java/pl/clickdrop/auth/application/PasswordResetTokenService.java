@@ -32,7 +32,7 @@ public class PasswordResetTokenService {
     }
 
     public void invalidateActiveTokens(User user) {
-        List<PasswordResetToken> active = repository.findAllByUserAtIsNull(user);
+        List<PasswordResetToken> active = repository.findAllByUserAndUsedAtIsNull(user);
         Instant now = Instant.now();
 
         for (PasswordResetToken token : active) {

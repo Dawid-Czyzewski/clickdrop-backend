@@ -139,7 +139,7 @@ class PasswordResetTokenServiceTest {
         active.setUser(user);
         active.setUsedAt(null);
 
-        when(repository.findAllByUserAtIsNull(user)).thenReturn(List.of(active));
+        when(repository.findAllByUserAndUsedAtIsNull(user)).thenReturn(List.of(active));
         when(repository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
 
         service.invalidateActiveTokens(user);
