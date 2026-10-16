@@ -292,4 +292,54 @@ class AuthServiceTest {
 
         verifyNoInteractions(emailVerificationTokenService, emailService, economyClient);
     }
+
+    @Test
+    void changePassword_updatesHash_andRevokesRefreshTokens() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("player@clickdrop.pl");
+        user.setPassword("$2a$10$old");
+
+        when(userRepository.findByEmail("player@clickdrop.pl")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("OldPass123!", "$2a$10$old")).thenReturn(true);
+        when(passwordEncoder.encode("NewPass123!")).thenReturn("$2a$10$new");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        authService.changePassword(
+                "player@clickdrop.pl",
+                new ChangePasswordRequest("OldPass123!", "NewPass123!")
+        );
+
+        assertThat(user.getPassword()).isEqualTo("$2a$10$new");
+        verify(userRepository).save(user);
+        verify(refreshTokenService).revokeAllForUser(user);
+    }
+
+    @Test
+    void changePassword_throws_whenCurrentPasswordWrong() {
+        User user = new User();
+        user.setEmail("player@clickdrop.pl");
+        user.setPassword("$2a$10$old");
+
+        when(userRepository.findByEmail("player@clickdrop.pl")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("Wrong!", "$2a$10$old")).thenReturn(false);
+
+        assertThatThrownBy(() -> authService.changePassword(
+                "player@clickdrop.pl",
+                new ChangePasswordRequest("Wrong!", "NewPass123!")
+        )).isInstanceOf(InvalidCurrentPasswordException.class);
+
+        verify(userRepository, never()).save(any());
+        verify(refreshTokenService, never()).revokeAllForUser(any());
+    }
+
+    @Test
+    void changePassword_throws_whenUserMissing() {
+        when(userRepository.findByEmail("missing@clickdrop.pl")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authService.changePassword(
+                "missing@clickdrop.pl",
+                new ChangePasswordRequest("OldPass123!", "NewPass123!")
+        )).isInstanceOf(UserNotFoundException.class);
+    }
 }

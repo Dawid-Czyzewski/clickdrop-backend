@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import pl.clickdrop.auth.api.dto.*;
 import pl.clickdrop.auth.application.AuthService;
@@ -71,6 +72,14 @@ public class AuthController {
             @Valid @RequestBody ResetPasswordRequest request
     ) {
         authService.resetPassword(request);
+        return ResponseEntity.ok().build();
+    }
+
+    public ResponseEntity<Void> changePassword(
+            Authentication authentication,
+            @Valid @RequestBody ChangePasswordRequest request
+    ) {
+        authService.changePassword(authentication.getName(), request);
         return ResponseEntity.ok().build();
     }
 }

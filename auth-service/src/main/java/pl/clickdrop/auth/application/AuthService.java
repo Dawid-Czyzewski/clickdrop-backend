@@ -129,6 +129,19 @@ public class AuthService {
         refreshTokenService.revoke(request.refreshToken());
     }
 
+    public void changePassword(String email, ChangePasswordRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(UserNotFoundException::new);
+
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+            throw new InvalidCurrentPasswordException();
+        }
+
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+        refreshTokenService.revokeAllForUser(user);
+    }
+
     public void forgotPassword(ForgotPasswordRequest request) throws MessagingException {
         var userOpt = userRepository.findByEmail(request.email());
 
