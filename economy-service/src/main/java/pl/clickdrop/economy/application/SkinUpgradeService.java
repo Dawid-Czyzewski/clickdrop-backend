@@ -28,16 +28,16 @@ public class SkinUpgradeService {
     private final UserInventoryItemRepository userInventoryItemRepository;
     private final ItemRepository itemRepository;
     private final SkinUpgradeRng skinUpgradeRng;
-    private final StatTrackRoller StatTrackRoller;
 
     @Transactional(readOnly = true)
     public SkinUpgradePreviewResponse preview(Long userId, Long inventoryItemId) {
         UserInventoryItem row = requireOwned(userId, inventoryItemId);
         Item current = requireItem(row.getItemId(), inventoryItemId);
 
+        boolean sourceStatTrack = row.isStatTrack();
         BigDecimal currentPrice = SellPricing.sellPrice(
-                current.getRarity(), row.getExterior(), row.isStatTrack());
-        List<SkinUpgradeTargetDto> targets = findDearerTargets(currentPrice).stream()
+                current.getRarity(), row.getExterior(), sourceStatTrack);
+        List<SkinUpgradeTargetDto> targets = findDearerTargets(currentPrice, sourceStatTrack).stream()
                 .map(SkinUpgradeService::toDto)
                 .toList();
 
@@ -48,7 +48,7 @@ public class SkinUpgradeService {
                         current.getDisplayName(),
                         current.getRarity(),
                         row.getExterior(),
-                        row.isStatTrack(),
+                        sourceStatTrack,
                         currentPrice
                 ),
                 SUCCESS_CHANCE,
@@ -61,9 +61,10 @@ public class SkinUpgradeService {
         UserInventoryItem row = requireOwned(userId, inventoryItemId);
         Item current = requireItem(row.getItemId(), inventoryItemId);
 
+        boolean sourceStatTrack = row.isStatTrack();
         BigDecimal currentPrice = SellPricing.sellPrice(
-                current.getRarity(), row.getExterior(), row.isStatTrack());
-        List<UpgradeTarget> targets = findDearerTargets(currentPrice);
+                current.getRarity(), row.getExterior(), sourceStatTrack);
+        List<UpgradeTarget> targets = findDearerTargets(currentPrice, sourceStatTrack);
 
         if (targets.isEmpty()) {
             throw new SkinUpgradeNoTargetsException(inventoryItemId);
@@ -78,7 +79,7 @@ public class SkinUpgradeService {
 
         userInventoryItemRepository.delete(row);
 
-        boolean statTrack = StatTrackRoller.roll();
+        boolean statTrack = sourceStatTrack;
         BigDecimal price = SellPricing.sellPrice(
                 chosen.item().getRarity(), chosen.exterior(), statTrack);
 
@@ -126,7 +127,7 @@ public class SkinUpgradeService {
                 .orElseThrow(() -> new InventoryItemNotFoundException(inventoryItemId));
     }
 
-    private List<UpgradeTarget> findDearerTargets(BigDecimal currentPrice) {
+    private List<UpgradeTarget> findDearerTargets(BigDecimal currentPrice, boolean sourceStatTrack) {
         BigDecimal maxPrice = currentPrice
                 .multiply(MAX_PRICE_MULTIPLIER)
                 .setScale(2, RoundingMode.HALF_UP);
@@ -134,9 +135,10 @@ public class SkinUpgradeService {
         List<UpgradeTarget> targets = new ArrayList<>();
         for (Item item : itemRepository.findByActiveTrueOrderByIdAsc()) {
             for (ItemExterior exterior : ItemExterior.values()) {
-                BigDecimal price = SellPricing.sellPrice(item.getRarity(), exterior);
+                BigDecimal price = SellPricing.sellPrice(
+                        item.getRarity(), exterior, sourceStatTrack);
                 if (price.compareTo(currentPrice) > 0 && price.compareTo(maxPrice) <= 0) {
-                    targets.add(new UpgradeTarget(item, exterior, price));
+                    targets.add(new UpgradeTarget(item, exterior, sourceStatTrack, price));
                 }
             }
         }
@@ -151,9 +153,15 @@ public class SkinUpgradeService {
                 item.getDisplayName(),
                 item.getRarity(),
                 target.exterior(),
+                target.statTrack(),
                 target.price()
         );
     }
 
-    private record UpgradeTarget(Item item, ItemExterior exterior, BigDecimal price) {}
+    private record UpgradeTarget(
+            Item item,
+            ItemExterior exterior,
+            boolean statTrack,
+            BigDecimal price
+    ) {}
 }

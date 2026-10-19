@@ -36,16 +36,16 @@ class SkinUpgradeServiceTest {
     @Mock UserInventoryItemRepository inventoryItemRepository;
     @Mock ItemRepository itemRepository;
     @Mock SkinUpgradeRng skinUpgradeRng;
-    @Mock StatTrackRoller StatTrackRoller;
 
     @InjectMocks
     SkinUpgradeService skinUpgradeService;
 
     @Test
     void preview_uspBattleScarred_includesBetterWearAndBandedDearerSkins() {
-        UserInventoryItem row = ownedRow(10L, 15L, 1L, ItemExterior.BATTLE_SCARRED);
-        Item usp = item(1L, "USP_GUARDIAN", ItemRarity.MIL_SPEC);
-        Item restricted = item(2L, "AK_REDLINE", ItemRarity.RESTRICTED);
+        UserInventoryItem row = SkinUpgradeTestFixtures.ownedRow(
+                10L, 15L, 1L, ItemExterior.BATTLE_SCARRED, false);
+        Item usp = SkinUpgradeTestFixtures.item(1L, "USP_GUARDIAN", ItemRarity.MIL_SPEC);
+        Item restricted = SkinUpgradeTestFixtures.item(2L, "AK_REDLINE", ItemRarity.RESTRICTED);
 
         when(inventoryItemRepository.findByIdAndUserId(10L, 15L)).thenReturn(Optional.of(row));
         when(itemRepository.findById(1L)).thenReturn(Optional.of(usp));
@@ -55,19 +55,23 @@ class SkinUpgradeServiceTest {
 
         assertThat(preview.successChance()).isEqualTo(0.5);
         assertThat(preview.current().itemCode()).isEqualTo("USP_GUARDIAN");
+        assertThat(preview.current().statTrack()).isFalse();
         assertThat(preview.possibleTargets())
                 .anyMatch(t -> t.itemCode().equals("USP_GUARDIAN")
                         && t.exterior() == ItemExterior.WELL_WORN
+                        && !t.statTrack()
                         && t.suggestedSellPrice().compareTo(new BigDecimal("11.25")) == 0);
         assertThat(preview.possibleTargets())
                 .noneMatch(t -> t.suggestedSellPrice().compareTo(new BigDecimal("13.13")) > 0);
+        assertThat(preview.possibleTargets()).allMatch(t -> !t.statTrack());
     }
 
     @Test
     void preview_restrictedBattleScarred_capsBandNear35() {
-        UserInventoryItem row = ownedRow(10L, 15L, 2L, ItemExterior.BATTLE_SCARRED);
-        Item usp = item(1L, "USP_GUARDIAN", ItemRarity.MIL_SPEC);
-        Item slate = item(2L, "AK_47_SLATE", ItemRarity.RESTRICTED);
+        UserInventoryItem row = SkinUpgradeTestFixtures.ownedRow(
+                10L, 15L, 2L, ItemExterior.BATTLE_SCARRED, false);
+        Item usp = SkinUpgradeTestFixtures.item(1L, "USP_GUARDIAN", ItemRarity.MIL_SPEC);
+        Item slate = SkinUpgradeTestFixtures.item(2L, "AK_47_SLATE", ItemRarity.RESTRICTED);
 
         when(inventoryItemRepository.findByIdAndUserId(10L, 15L)).thenReturn(Optional.of(row));
         when(itemRepository.findById(2L)).thenReturn(Optional.of(slate));
@@ -83,16 +87,16 @@ class SkinUpgradeServiceTest {
 
     @Test
     void upgrade_success_givesExactlyChosenTarget() {
-        UserInventoryItem row = ownedRow(10L, 15L, 1L, ItemExterior.FIELD_TESTED);
-        Item current = item(1L, "USP_GUARDIAN", ItemRarity.MIL_SPEC);
-        Item dearer = item(2L, "AK_REDLINE", ItemRarity.RESTRICTED);
+        UserInventoryItem row = SkinUpgradeTestFixtures.ownedRow(
+                10L, 15L, 1L, ItemExterior.FIELD_TESTED, false);
+        Item current = SkinUpgradeTestFixtures.item(1L, "USP_GUARDIAN", ItemRarity.MIL_SPEC);
+        Item dearer = SkinUpgradeTestFixtures.item(2L, "AK_REDLINE", ItemRarity.RESTRICTED);
         SkinUpgradeRequest request = new SkinUpgradeRequest(2L, ItemExterior.BATTLE_SCARRED);
 
         when(inventoryItemRepository.findByIdAndUserId(10L, 15L)).thenReturn(Optional.of(row));
         when(itemRepository.findById(1L)).thenReturn(Optional.of(current));
         when(itemRepository.findByActiveTrueOrderByIdAsc()).thenReturn(List.of(current, dearer));
         when(skinUpgradeRng.rollSuccess()).thenReturn(true);
-        when(StatTrackRoller.roll()).thenReturn(false);
         when(inventoryItemRepository.save(any(UserInventoryItem.class))).thenAnswer(inv -> {
             UserInventoryItem saved = inv.getArgument(0);
             saved.setId(99L);
@@ -118,9 +122,10 @@ class SkinUpgradeServiceTest {
 
     @Test
     void upgrade_fail_deletesItem() {
-        UserInventoryItem row = ownedRow(10L, 15L, 1L, ItemExterior.FIELD_TESTED);
-        Item current = item(1L, "USP_GUARDIAN", ItemRarity.MIL_SPEC);
-        Item dearer = item(2L, "AK_REDLINE", ItemRarity.RESTRICTED);
+        UserInventoryItem row = SkinUpgradeTestFixtures.ownedRow(
+                10L, 15L, 1L, ItemExterior.FIELD_TESTED, false);
+        Item current = SkinUpgradeTestFixtures.item(1L, "USP_GUARDIAN", ItemRarity.MIL_SPEC);
+        Item dearer = SkinUpgradeTestFixtures.item(2L, "AK_REDLINE", ItemRarity.RESTRICTED);
         SkinUpgradeRequest request = new SkinUpgradeRequest(2L, ItemExterior.BATTLE_SCARRED);
 
         when(inventoryItemRepository.findByIdAndUserId(10L, 15L)).thenReturn(Optional.of(row));
@@ -137,9 +142,10 @@ class SkinUpgradeServiceTest {
 
     @Test
     void upgrade_throws_whenTargetOutOfBand() {
-        UserInventoryItem row = ownedRow(10L, 15L, 1L, ItemExterior.FIELD_TESTED);
-        Item current = item(1L, "USP_GUARDIAN", ItemRarity.MIL_SPEC);
-        Item dearer = item(2L, "AK_REDLINE", ItemRarity.RESTRICTED);
+        UserInventoryItem row = SkinUpgradeTestFixtures.ownedRow(
+                10L, 15L, 1L, ItemExterior.FIELD_TESTED, false);
+        Item current = SkinUpgradeTestFixtures.item(1L, "USP_GUARDIAN", ItemRarity.MIL_SPEC);
+        Item dearer = SkinUpgradeTestFixtures.item(2L, "AK_REDLINE", ItemRarity.RESTRICTED);
         SkinUpgradeRequest request = new SkinUpgradeRequest(2L, ItemExterior.FIELD_TESTED);
 
         when(inventoryItemRepository.findByIdAndUserId(10L, 15L)).thenReturn(Optional.of(row));
@@ -164,8 +170,9 @@ class SkinUpgradeServiceTest {
 
     @Test
     void upgrade_throws_whenCovertFactoryNew_noTargets() {
-        UserInventoryItem row = ownedRow(10L, 15L, 1L, ItemExterior.FACTORY_NEW);
-        Item covert = item(1L, "AWP_ASIIMOV", ItemRarity.COVERT);
+        UserInventoryItem row = SkinUpgradeTestFixtures.ownedRow(
+                10L, 15L, 1L, ItemExterior.FACTORY_NEW, false);
+        Item covert = SkinUpgradeTestFixtures.item(1L, "AWP_ASIIMOV", ItemRarity.COVERT);
 
         when(inventoryItemRepository.findByIdAndUserId(10L, 15L)).thenReturn(Optional.of(row));
         when(itemRepository.findById(1L)).thenReturn(Optional.of(covert));
@@ -176,24 +183,5 @@ class SkinUpgradeServiceTest {
                 .isInstanceOf(SkinUpgradeNoTargetsException.class);
 
         verify(skinUpgradeRng, never()).rollSuccess();
-    }
-
-    private static UserInventoryItem ownedRow(Long id, Long userId, Long itemId, ItemExterior exterior) {
-        UserInventoryItem row = new UserInventoryItem();
-        row.setId(id);
-        row.setUserId(userId);
-        row.setItemId(itemId);
-        row.setExterior(exterior);
-        return row;
-    }
-
-    private static Item item(Long id, String code, ItemRarity rarity) {
-        Item item = new Item();
-        item.setId(id);
-        item.setCode(code);
-        item.setDisplayName(code.replace('_', ' '));
-        item.setRarity(rarity);
-        item.setActive(true);
-        return item;
     }
 }

@@ -11,5 +11,6 @@ public record SkinUpgradeTargetDto(
         String itemDisplayName,
         ItemRarity rarity,
         ItemExterior exterior,
+        boolean statTrack,
         BigDecimal suggestedSellPrice
 ) {}
