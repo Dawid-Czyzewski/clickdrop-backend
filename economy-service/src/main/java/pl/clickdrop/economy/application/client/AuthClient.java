@@ -19,4 +19,16 @@ public class AuthClient {
                 .retrieve()
                 .body(AuthExperienceResponse.class);
     }
+
+    public int getLevel(Long userId) {
+        AuthUserLevelResponse body = authRestClient.get()
+                .uri("/api/internal/users/{userId}/level", userId)
+                .retrieve()
+                .body(AuthUserLevelResponse.class);
+        if (body == null || body.level() == null) {
+            throw new IllegalStateException("Auth level response was null for userId=" + userId);
+        }
+        return body.level();
+    }
 }
+

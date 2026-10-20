@@ -51,4 +51,23 @@ class UserServiceTest {
         assertThatThrownBy(() -> userService.getCurrentUser("missing@clickdrop.pl"))
                 .isInstanceOf(UserNotFoundException.class);
     }
+
+    @Test
+    void getLevel_returnsUserLevel() {
+        User user = new User();
+        user.setId(15L);
+        user.setLevel(7);
+
+        when(userRepository.findById(15L)).thenReturn(Optional.of(user));
+
+        assertThat(userService.getLevel(15L)).isEqualTo(7);
+    }
+
+    @Test
+    void getLevel_throws_whenUserMissing() {
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.getLevel(99L))
+                .isInstanceOf(UserNotFoundException.class);
+    }
 }

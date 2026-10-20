@@ -29,6 +29,12 @@ public class UserService {
         return toResponse(user);
     }
 
+    public int getLevel(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
+        return user.getLevel() == null ? 1 : user.getLevel();
+    }
+
     public List<LeaderboardEntryResponse> leaderboard(Integer limit) {
         int size = normalizeLimit(limit);
         List<User> users = userRepository

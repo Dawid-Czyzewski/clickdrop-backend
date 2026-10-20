@@ -30,6 +30,9 @@ public class GameCase {
     @Column(nullable = false)
     private boolean active = true;
 
+    @Column(name = "min_level", nullable = false)
+    private Integer minLevel = 1;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

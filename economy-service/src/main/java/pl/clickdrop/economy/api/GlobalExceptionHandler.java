@@ -47,6 +47,16 @@ public class GlobalExceptionHandler {
                 .body(Map.of("message", ex.getMessage()));
     }
 
+    @ExceptionHandler(CaseLevelTooLowException.class)
+    public ResponseEntity<Map<String, String>> handleCaseLevelTooLow(CaseLevelTooLowException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of(
+                        "message", ex.getMessage(),
+                        "requiredLevel", String.valueOf(ex.getRequiredLevel()),
+                        "userLevel", String.valueOf(ex.getUserLevel())
+                ));
+    }
+
     @ExceptionHandler(InventoryItemNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleInventoryNotFound(InventoryItemNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)

@@ -8,6 +8,7 @@ import pl.clickdrop.economy.api.dto.OpenedCaseDropResponse;
 import pl.clickdrop.economy.application.client.AuthClient;
 import pl.clickdrop.economy.application.client.AuthExperienceResponse;
 import pl.clickdrop.economy.application.exception.CaseDropPoolEmptyException;
+import pl.clickdrop.economy.application.exception.CaseLevelTooLowException;
 import pl.clickdrop.economy.application.exception.CaseNotFoundException;
 import pl.clickdrop.economy.application.exception.InsufficientFundsException;
 import pl.clickdrop.economy.application.exception.InvalidCaseOpenCountException;
@@ -65,6 +66,12 @@ public class CaseOpenService {
         GameCase gameCase = gameCaseRepository.findById(caseId)
                 .filter(GameCase::isActive)
                 .orElseThrow(() -> new CaseNotFoundException(caseId));
+
+        int userLevel = authClient.getLevel(userId);
+        int requiredLevel = gameCase.getMinLevel() == null ? 1 : gameCase.getMinLevel();
+        if (userLevel < requiredLevel) {
+            throw new CaseLevelTooLowException(caseId, requiredLevel, userLevel);
+        }
 
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new WalletNotFoundException(userId));

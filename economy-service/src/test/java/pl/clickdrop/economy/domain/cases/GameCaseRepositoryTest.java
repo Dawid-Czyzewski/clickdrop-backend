@@ -36,6 +36,7 @@ class GameCaseRepositoryTest {
         assertThat(cases).allSatisfy(c -> {
             assertThat(c.getDisplayName()).isNotBlank();
             assertThat(c.getPrice()).isGreaterThan(BigDecimal.ZERO);
+            assertThat(c.getMinLevel()).isNotNull().isGreaterThanOrEqualTo(1);
             assertThat(caseDropRepository.findByCaseId(c.getId())).isNotEmpty();
         });
     }

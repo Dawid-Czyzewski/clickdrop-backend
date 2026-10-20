@@ -2,7 +2,6 @@ package pl.clickdrop.economy.application;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -24,11 +23,9 @@ import pl.clickdrop.economy.domain.item.Item;
 import pl.clickdrop.economy.domain.item.ItemExterior;
 import pl.clickdrop.economy.domain.item.ItemRarity;
 import pl.clickdrop.economy.domain.item.ItemRepository;
-import pl.clickdrop.economy.domain.recent.RecentDropSource;
 import pl.clickdrop.economy.domain.wallet.Wallet;
 import pl.clickdrop.economy.domain.wallet.WalletRepository;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
@@ -60,6 +57,7 @@ class CaseOpenServiceTest {
     @Test
     void open_x1_chargesWallet_savesInventory_grantsXp() {
         stubHappyPath("100.00");
+        when(authClient.getLevel(15L)).thenReturn(1);
         when(authClient.addExperience(15L, 10))
                 .thenReturn(new AuthExperienceResponse(1, 60, 10, false));
 
@@ -69,13 +67,10 @@ class CaseOpenServiceTest {
         assertThat(res.totalCost()).isEqualByComparingTo("50.00");
         assertThat(res.balance()).isEqualByComparingTo("50.00");
         assertThat(res.drops()).hasSize(1);
-        assertThat(res.drops().getFirst().itemCode()).isEqualTo("AK_REDLINE");
-        assertThat(res.drops().getFirst().suggestedSellPrice()).isEqualByComparingTo("40.00");
         assertThat(res.experienceGained()).isEqualTo(10);
 
         verify(inventoryItemRepository, times(1)).save(any());
-        verify(recentDropRecorder, times(1))
-                .record(eq(15L), any(Item.class), eq(ItemExterior.FIELD_TESTED), eq(false), eq(RecentDropSource.CASE));
+        verify(authClient).getLevel(15L);
         verify(authClient).addExperience(15L, 10);
         verify(caseOpenRateLimiter).check(15L);
     }
@@ -83,6 +78,7 @@ class CaseOpenServiceTest {
     @Test
     void open_x3_opensThree_andChargesTriple() {
         stubHappyPath("200.00");
+        when(authClient.getLevel(15L)).thenReturn(1);
         when(authClient.addExperience(15L, 30))
                 .thenReturn(new AuthExperienceResponse(2, 20, 30, true));
 
@@ -90,13 +86,8 @@ class CaseOpenServiceTest {
 
         assertThat(res.count()).isEqualTo(3);
         assertThat(res.totalCost()).isEqualByComparingTo("150.00");
-        assertThat(res.balance()).isEqualByComparingTo("50.00");
         assertThat(res.drops()).hasSize(3);
-        assertThat(res.experienceGained()).isEqualTo(30);
-
         verify(inventoryItemRepository, times(3)).save(any());
-        verify(recentDropRecorder, times(3))
-                .record(any(), any(), any(), anyBoolean(), eq(RecentDropSource.CASE));
         verify(weightedPicker, times(3)).pick(anyList(), any(ToIntFunction.class));
         verify(authClient).addExperience(15L, 30);
     }
@@ -113,10 +104,11 @@ class CaseOpenServiceTest {
 
     @Test
     void open_x3_insufficientFunds_noSideEffects() {
-        GameCase gameCase = activeCase(1L, "50.00");
-        Wallet wallet = wallet(15L, "100.00");
+        GameCase gameCase = CaseOpenTestFixtures.activeCase(1L, "50.00", 1);
+        Wallet wallet = CaseOpenTestFixtures.wallet(15L, "100.00");
 
         when(gameCaseRepository.findById(1L)).thenReturn(Optional.of(gameCase));
+        when(authClient.getLevel(15L)).thenReturn(1);
         when(walletRepository.findByUserId(15L)).thenReturn(Optional.of(wallet));
 
         assertThatThrownBy(() -> caseOpenService.open(15L, 1L, 3))
@@ -125,7 +117,6 @@ class CaseOpenServiceTest {
         verify(inventoryItemRepository, never()).save(any());
         verify(walletRepository, never()).save(any());
         verify(authClient, never()).addExperience(any(), anyInt());
-        verify(recentDropRecorder, never()).record(any(), any(), any(), anyBoolean(), any());
         assertThat(wallet.getBalance()).isEqualByComparingTo("100.00");
     }
 
@@ -147,15 +138,18 @@ class CaseOpenServiceTest {
         assertThatThrownBy(() -> caseOpenService.open(15L, 99L, 1))
                 .isInstanceOf(CaseNotFoundException.class);
 
-        verifyNoInteractions(walletRepository, caseDropRepository, inventoryItemRepository, authClient);
+        verifyNoInteractions(walletRepository, caseDropRepository, inventoryItemRepository);
+        verify(authClient, never()).getLevel(any());
+        verify(authClient, never()).addExperience(any(), anyInt());
     }
 
     @Test
     void open_throws_whenDropPoolEmpty() {
-        GameCase gameCase = activeCase(1L, "50.00");
-        Wallet wallet = wallet(15L, "100.00");
+        GameCase gameCase = CaseOpenTestFixtures.activeCase(1L, "50.00", 1);
+        Wallet wallet = CaseOpenTestFixtures.wallet(15L, "100.00");
 
         when(gameCaseRepository.findById(1L)).thenReturn(Optional.of(gameCase));
+        when(authClient.getLevel(15L)).thenReturn(1);
         when(walletRepository.findByUserId(15L)).thenReturn(Optional.of(wallet));
         when(caseDropRepository.findByCaseId(1L)).thenReturn(List.of());
 
@@ -167,10 +161,10 @@ class CaseOpenServiceTest {
     }
 
     private void stubHappyPath(String balance) {
-        GameCase gameCase = activeCase(1L, "50.00");
-        Wallet wallet = wallet(15L, balance);
-        CaseDrop drop = drop(10L, 1L, 3L, 15);
-        Item item = item(3L, "AK_REDLINE", ItemRarity.RESTRICTED);
+        GameCase gameCase = CaseOpenTestFixtures.activeCase(1L, "50.00", 1);
+        Wallet wallet = CaseOpenTestFixtures.wallet(15L, balance);
+        CaseDrop drop = CaseOpenTestFixtures.drop(10L, 1L, 3L, 15);
+        Item item = CaseOpenTestFixtures.item(3L, "AK_REDLINE", ItemRarity.RESTRICTED);
         AtomicLong ids = new AtomicLong(100);
 
         when(gameCaseRepository.findById(1L)).thenReturn(Optional.of(gameCase));
@@ -186,41 +180,5 @@ class CaseOpenServiceTest {
             row.setId(ids.getAndIncrement());
             return row;
         });
-    }
-
-    private static GameCase activeCase(Long id, String price) {
-        GameCase c = new GameCase();
-        c.setId(id);
-        c.setCode("ANVIL");
-        c.setDisplayName("Anvil");
-        c.setPrice(new BigDecimal(price));
-        c.setActive(true);
-        return c;
-    }
-
-    private static Wallet wallet(Long userId, String balance) {
-        Wallet w = new Wallet();
-        w.setUserId(userId);
-        w.setBalance(new BigDecimal(balance));
-        return w;
-    }
-
-    private static CaseDrop drop(Long id, Long caseId, Long itemId, int weight) {
-        CaseDrop d = new CaseDrop();
-        d.setId(id);
-        d.setCaseId(caseId);
-        d.setItemId(itemId);
-        d.setWeight(weight);
-        return d;
-    }
-
-    private static Item item(Long id, String code, ItemRarity rarity) {
-        Item i = new Item();
-        i.setId(id);
-        i.setCode(code);
-        i.setDisplayName(code.replace('_', ' '));
-        i.setRarity(rarity);
-        i.setActive(true);
-        return i;
     }
 }

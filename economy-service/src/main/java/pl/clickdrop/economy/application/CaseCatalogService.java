@@ -85,7 +85,8 @@ public class CaseCatalogService {
                 gameCase.getCode(),
                 gameCase.getDisplayName(),
                 gameCase.getPrice(),
-                gameCase.getSortOrder()
+                gameCase.getSortOrder(),
+                gameCase.getMinLevel() == null ? 1 : gameCase.getMinLevel()
         );
     }
 }

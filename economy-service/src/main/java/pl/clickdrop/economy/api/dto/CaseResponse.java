@@ -1,6 +1,5 @@
 package pl.clickdrop.economy.api.dto;
 
-
 import java.math.BigDecimal;
 
 public record CaseResponse(
@@ -8,6 +7,7 @@ public record CaseResponse(
         String code,
         String displayName,
         BigDecimal price,
-        Integer sortOrder
+        Integer sortOrder,
+        Integer minLevel
 ) {
 }
