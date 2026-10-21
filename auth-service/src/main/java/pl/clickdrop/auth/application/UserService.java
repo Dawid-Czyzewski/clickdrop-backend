@@ -54,6 +54,22 @@ public class UserService {
         return result;
     }
 
+    public LeaderboardEntryResponse myLeaderBoardRank(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(UserNotFoundException::new);
+
+        int level = user.getLevel() == null ? 1 : user.getLevel();
+        int experience = user.getExperience() == null ? 0 : user.getExperience();
+        int rank = (int) userRepository.countRankedAbove(level, experience) + 1;
+
+        return new LeaderboardEntryResponse(
+                rank,
+                user.getUsername(),
+                level,
+                experience
+        );
+    }
+
     private static int normalizeLimit(Integer limit) {
         if (limit == null || limit < 1) {
             return DEFAULT_LIMIT;

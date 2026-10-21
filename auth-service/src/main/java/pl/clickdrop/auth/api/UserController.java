@@ -33,4 +33,13 @@ public class UserController {
     ) {
         return ResponseEntity.ok(userService.leaderboard(limit));
     }
+
+    @GetMapping("/leaderboard/me")
+    public ResponseEntity<LeaderboardEntryResponse> myLeaderBoardRank(
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(
+                userService.myLeaderBoardRank(authentication.getName())
+        );
+    }
 }
