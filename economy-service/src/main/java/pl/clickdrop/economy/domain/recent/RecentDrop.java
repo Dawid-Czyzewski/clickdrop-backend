@@ -40,6 +40,12 @@ public class RecentDrop {
     @Column(nullable = false, length = 16)
     private RecentDropSource source;
 
+    @Column(name = "case_id")
+    private Long caseId;
+
+    @Column(name = "case_code", length = 128)
+    private String caseCode;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

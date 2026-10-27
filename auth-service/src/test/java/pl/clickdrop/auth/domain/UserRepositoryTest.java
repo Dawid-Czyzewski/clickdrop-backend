@@ -8,8 +8,6 @@ import pl.clickdrop.auth.domain.user.Role;
 import pl.clickdrop.auth.domain.user.User;
 import pl.clickdrop.auth.domain.user.UserRepository;
 
-import java.math.BigDecimal;
-
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @DataJpaTest
@@ -28,7 +26,6 @@ public class UserRepositoryTest {
         user.setRole(Role.USER);
         user.setExperience(0);
         user.setLevel(1);
-        user.setDollars(BigDecimal.ZERO);
 
         User saved = userRepository.save(user);
 
@@ -41,7 +38,6 @@ public class UserRepositoryTest {
         assertThat(found.getRole()).isEqualTo(Role.USER);
         assertThat(found.getExperience()).isZero();
         assertThat(found.getLevel()).isEqualTo(1);
-        assertThat(found.getDollars()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(userRepository.existsByEmail("test@clickdrop.pl")).isTrue();
     }
 }

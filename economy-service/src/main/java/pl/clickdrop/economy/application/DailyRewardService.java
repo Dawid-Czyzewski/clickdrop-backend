@@ -128,7 +128,7 @@ public class DailyRewardService {
         inventoryItem.setStatTrack(statTrack);
         inventoryItem = userInventoryItemRepository.save(inventoryItem);
 
-        recentDropRecorder.record(userId, item, exterior, statTrack, RecentDropSource.DAILY);
+        recentDropRecorder.record(userId, item, exterior, statTrack, RecentDropSource.DAILY, null, null);
 
         return new DailySkinClaimResponse(
                 inventoryItem.getId(),

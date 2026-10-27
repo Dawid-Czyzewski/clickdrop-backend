@@ -43,7 +43,9 @@ public class RecentDropsService {
                 row.getExterior(),
                 row.isStatTrack(),
                 row.getSource(),
-                row.getCreatedAt()
+                row.getCreatedAt(),
+                row.getCaseId(),
+                row.getCaseCode()
         );
     }
 }

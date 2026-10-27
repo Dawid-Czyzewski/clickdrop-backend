@@ -50,6 +50,21 @@ class RecentDropsServiceTest {
         assertThat(dto.exterior()).isEqualTo(ItemExterior.FIELD_TESTED);
         assertThat(dto.statTrack()).isFalse();
         assertThat(dto.source()).isEqualTo(RecentDropSource.CASE);
+        assertThat(dto.caseId()).isEqualTo(7L);
+        assertThat(dto.caseCode()).isEqualTo("REVOLUTION_CASE");
+    }
+
+    @Test
+    void listRecent_mapsDailyWithoutCaseRef() {
+        RecentDrop row = drop("AK_REDLINE", RecentDropSource.DAILY);
+        when(recentDropRepository.findAllByOrderByCreatedAtDesc(any(Pageable.class)))
+                .thenReturn(List.of(row));
+
+        RecentDropResponse dto = recentDropsService.listRecent(5).getFirst();
+
+        assertThat(dto.source()).isEqualTo(RecentDropSource.DAILY);
+        assertThat(dto.caseId()).isNull();
+        assertThat(dto.caseCode()).isNull();
     }
 
     @Test
@@ -74,6 +89,10 @@ class RecentDropsServiceTest {
         row.setStatTrack(false);
         row.setSource(source);
         row.setCreatedAt(Instant.parse("2026-01-01T00:00:00Z"));
+        if (source == RecentDropSource.CASE) {
+            row.setCaseId(7L);
+            row.setCaseCode("REVOLUTION_CASE");
+        }
         return row;
     }
 }

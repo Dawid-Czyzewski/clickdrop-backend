@@ -1,0 +1,5 @@
+ALTER TABLE recent_drops
+    ADD COLUMN IF NOT EXISTS case_id BIGINT NULL;
+
+ALTER TABLE recent_drops
+    ADD COLUMN IF NOT EXISTS case_code VARCHAR(128) NULL;

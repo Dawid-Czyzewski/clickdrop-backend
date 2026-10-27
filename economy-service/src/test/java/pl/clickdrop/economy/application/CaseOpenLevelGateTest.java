@@ -82,7 +82,7 @@ class CaseOpenLevelGateTest {
         verify(walletRepository, never()).save(any());
         verify(inventoryItemRepository, never()).save(any());
         verify(authClient, never()).addExperience(any(), anyInt());
-        verify(recentDropRecorder, never()).record(any(), any(), any(), anyBoolean(), any());
+        verify(recentDropRecorder, never()).record(any(), any(), any(), anyBoolean(), any(), any(), any());
     }
 
     private void stubOpenableCase(int minLevel) {

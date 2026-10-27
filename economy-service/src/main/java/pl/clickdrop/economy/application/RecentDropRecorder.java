@@ -19,17 +19,26 @@ public class RecentDropRecorder {
             Item item,
             ItemExterior exterior,
             boolean statTrack,
-            RecentDropSource source
+            RecentDropSource source,
+            Long caseId,
+            String caseCode
     ) {
-         RecentDrop row = new RecentDrop();
-         row.setUserId(userId);
-         row.setItemCode(item.getCode());
-         row.setItemDisplayName(item.getDisplayName());
-         row.setRarity(item.getRarity());
-         row.setExterior(exterior);
-         row.setStatTrack(statTrack);
-         row.setSource(source);
+        RecentDrop row = new RecentDrop();
+        row.setUserId(userId);
+        row.setItemCode(item.getCode());
+        row.setItemDisplayName(item.getDisplayName());
+        row.setRarity(item.getRarity());
+        row.setExterior(exterior);
+        row.setStatTrack(statTrack);
+        row.setSource(source);
+        if (source == RecentDropSource.CASE) {
+            row.setCaseId(caseId);
+            row.setCaseCode(caseCode);
+        } else {
+            row.setCaseId(null);
+            row.setCaseCode(null);
+        }
 
-         recentDropRepository.save(row);
+        recentDropRepository.save(row);
     }
 }

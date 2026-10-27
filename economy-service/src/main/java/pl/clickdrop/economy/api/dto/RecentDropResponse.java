@@ -13,6 +13,8 @@ public record RecentDropResponse(
         ItemExterior exterior,
         boolean statTrack,
         RecentDropSource source,
-        Instant createdAt
+        Instant createdAt,
+        Long caseId,
+        String caseCode
 ) {
 }

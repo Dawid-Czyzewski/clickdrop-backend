@@ -93,7 +93,7 @@ public class CaseOpenService {
 
         List<OpenedCaseDropResponse> opened = new ArrayList<>(opens);
         for (int i = 0; i < opens; i++) {
-            opened.add(rollOne(userId, caseId, pool, itemsById));
+            opened.add(rollOne(userId, gameCase, pool, itemsById));
         }
 
         wallet.setBalance(wallet.getBalance().subtract(totalCost));
@@ -117,10 +117,11 @@ public class CaseOpenService {
 
     private OpenedCaseDropResponse rollOne(
             Long userId,
-            Long caseId,
+            GameCase gameCase,
             List<CaseDrop> pool,
             Map<Long, Item> itemsById
     ) {
+        Long caseId = gameCase.getId();
         CaseDrop chosen = weightedPicker.pick(pool, CaseDrop::getWeight);
         Item item = itemsById.get(chosen.getItemId());
         if (item == null || !item.isActive()) {
@@ -137,7 +138,15 @@ public class CaseOpenService {
         inventoryItem.setStatTrack(statTrack);
         inventoryItem = inventoryItemRepository.save(inventoryItem);
 
-        recentDropRecorder.record(userId, item, exterior, statTrack, RecentDropSource.CASE);
+        recentDropRecorder.record(
+                userId,
+                item,
+                exterior,
+                statTrack,
+                RecentDropSource.CASE,
+                caseId,
+                gameCase.getCode()
+        );
 
         return new OpenedCaseDropResponse(
                 inventoryItem.getId(),
