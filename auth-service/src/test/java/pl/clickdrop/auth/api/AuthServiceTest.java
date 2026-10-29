@@ -190,6 +190,47 @@ class AuthServiceTest {
     }
 
     @Test
+    void register_succeeds_whenActivationEmailFails() throws MessagingException {
+        RegisterRequest request = new RegisterRequest(
+                "new@clickdrop.pl",
+                "newuser",
+                "Secret123!"
+        );
+
+        when(userRepository.existsByEmail("new@clickdrop.pl")).thenReturn(false);
+        when(userRepository.existsByUsername("newuser")).thenReturn(false);
+        when(passwordEncoder.encode("Secret123!")).thenReturn("$2a$10$hashed");
+
+        User saved = new User();
+        saved.setId(10L);
+        saved.setEmail("new@clickdrop.pl");
+        saved.setUsername("newuser");
+        saved.setPassword("$2a$10$hashed");
+        saved.setRole(Role.USER);
+        when(userRepository.save(any(User.class))).thenReturn(saved);
+
+        EmailVerificationToken verificationToken = new EmailVerificationToken();
+        verificationToken.setToken("activation-token");
+        when(emailVerificationTokenService.createFor(saved)).thenReturn(verificationToken);
+        doThrow(new RuntimeException("smtp down"))
+                .when(emailService)
+                .sendAccountActivation("new@clickdrop.pl", "newuser", "activation-token");
+        when(emailService.buildActivationLink("activation-token"))
+                .thenReturn("http://localhost:3000/verify-email?token=activation-token");
+
+        RegisterResponse response = authService.register(request);
+
+        assertThat(response.id()).isEqualTo(10L);
+        verify(economyClient).createWallet(10L);
+        verify(emailService).sendAccountActivation(
+                "new@clickdrop.pl",
+                "newuser",
+                "activation-token"
+        );
+        verify(emailService).buildActivationLink("activation-token");
+    }
+
+    @Test
     void register_throws_whenEmailExists() {
         when(userRepository.existsByEmail("taken@clickdrop.pl")).thenReturn(true);
 

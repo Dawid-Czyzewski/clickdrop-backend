@@ -1,6 +1,5 @@
 package pl.clickdrop.auth.api;
 
-import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +23,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) throws MessagingException {
+    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
     }
 
@@ -39,7 +38,7 @@ public class AuthController {
     @PostMapping("/resend-verification")
     public ResponseEntity<Void> resendVerification(
             @Valid @RequestBody ResendVerificationRequest request
-    ) throws MessagingException {
+    ) {
         authService.resendVerification(request);
         return ResponseEntity.noContent().build();
     }
@@ -62,7 +61,7 @@ public class AuthController {
     @PostMapping("/forgot-password")
     public ResponseEntity<Void> forgotPassword(
             @Valid @RequestBody ForgotPasswordRequest request
-    ) throws MessagingException {
+    ) {
         authService.forgotPassword(request);
         return ResponseEntity.ok().build();
     }

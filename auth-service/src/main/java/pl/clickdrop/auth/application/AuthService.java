@@ -1,8 +1,8 @@
 package pl.clickdrop.auth.application;
 
-import jakarta.mail.MessagingException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import pl.clickdrop.auth.api.dto.*;
@@ -19,8 +19,7 @@ import pl.clickdrop.auth.domain.user.User;
 import pl.clickdrop.auth.domain.user.UserRepository;
 import pl.clickdrop.auth.domain.verification.EmailVerificationToken;
 
-import java.math.BigDecimal;
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -58,7 +57,7 @@ public class AuthService {
         );
     }
 
-    public RegisterResponse register(RegisterRequest request) throws MessagingException {
+    public RegisterResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
             throw new EmailAlreadyExistsException();
         }
@@ -81,12 +80,7 @@ public class AuthService {
         economyClient.createWallet(saved.getId());
 
         EmailVerificationToken verificationToken = emailVerificationTokenService.createFor(saved);
-
-        emailService.sendAccountActivation(
-                saved.getEmail(),
-                saved.getUsername(),
-                verificationToken.getToken()
-        );
+        sendActivationOrLog(saved, verificationToken.getToken());
 
         return new RegisterResponse(saved.getId(), saved.getEmail(), saved.getUsername(), saved.getRole());
     }
@@ -95,7 +89,7 @@ public class AuthService {
         emailVerificationTokenService.verify(token);
     }
 
-    public void resendVerification(ResendVerificationRequest request) throws MessagingException {
+    public void resendVerification(ResendVerificationRequest request) {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(UserNotFoundException::new);
 
@@ -105,12 +99,21 @@ public class AuthService {
 
         emailVerificationTokenService.invalidateActiveTokens(user);
         EmailVerificationToken token = emailVerificationTokenService.createFor(user);
+        sendActivationOrLog(user, token.getToken());
+    }
 
-        emailService.sendAccountActivation(
-                user.getEmail(),
-                user.getUsername(),
-                token.getToken()
-        );
+    private void sendActivationOrLog(User user, String rawToken) {
+        try {
+            emailService.sendAccountActivation(user.getEmail(), user.getUsername(), rawToken);
+        } catch (Exception ex) {
+            String link = emailService.buildActivationLink(rawToken);
+            log.warn(
+                    "Activation email failed for {}; continue registration. Verify via: {}",
+                    user.getEmail(),
+                    link,
+                    ex
+            );
+        }
     }
 
     @Transactional
@@ -142,7 +145,7 @@ public class AuthService {
         refreshTokenService.revokeAllForUser(user);
     }
 
-    public void forgotPassword(ForgotPasswordRequest request) throws MessagingException {
+    public void forgotPassword(ForgotPasswordRequest request) {
         var userOpt = userRepository.findByEmail(request.email());
 
         if (userOpt.isEmpty()) {
@@ -152,11 +155,21 @@ public class AuthService {
         passwordResetTokenService.invalidateActiveTokens(user);
         PasswordResetToken token = passwordResetTokenService.createFor(user);
 
-        emailService.sendPasswordReset(
-                user.getEmail(),
-                user.getUsername(),
-                token.getToken()
-        );
+        try {
+            emailService.sendPasswordReset(
+                    user.getEmail(),
+                    user.getUsername(),
+                    token.getToken()
+            );
+        } catch (Exception ex) {
+            String link = emailService.buildPasswordResetLink(token.getToken());
+            log.warn(
+                    "Password-reset email failed for {}; token created. Reset via: {}",
+                    user.getEmail(),
+                    link,
+                    ex
+            );
+        }
     }
 
     @Transactional
