@@ -10,6 +10,7 @@ import pl.clickdrop.economy.application.client.AuthExperienceResponse;
 import pl.clickdrop.economy.application.exception.CaseDropPoolEmptyException;
 import pl.clickdrop.economy.application.exception.CaseLevelTooLowException;
 import pl.clickdrop.economy.application.exception.CaseNotFoundException;
+import pl.clickdrop.economy.application.exception.CaseOpenCountLevelTooLowException;
 import pl.clickdrop.economy.application.exception.InsufficientFundsException;
 import pl.clickdrop.economy.application.exception.InvalidCaseOpenCountException;
 import pl.clickdrop.economy.application.exception.WalletNotFoundException;
@@ -37,8 +38,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CaseOpenService {
 
-    static final int MIN_OPEN_COUNT = 1;
-    static final int MAX_OPEN_COUNT = 5;
+    static final int MIN_OPEN_COUNT = CaseOpenCountPolicy.MIN_OPEN_COUNT;
+    static final int MAX_OPEN_COUNT = CaseOpenCountPolicy.MAX_OPEN_COUNT;
+    static final int OPEN_X3_MIN_LEVEL = CaseOpenCountPolicy.OPEN_X3_MIN_LEVEL;
+    static final int OPEN_X5_MIN_LEVEL = CaseOpenCountPolicy.OPEN_X5_MIN_LEVEL;
     private static final int CASE_OPEN_XP = 10;
 
     private final GameCaseRepository gameCaseRepository;
@@ -71,6 +74,11 @@ public class CaseOpenService {
         int requiredLevel = gameCase.getMinLevel() == null ? 1 : gameCase.getMinLevel();
         if (userLevel < requiredLevel) {
             throw new CaseLevelTooLowException(caseId, requiredLevel, userLevel);
+        }
+
+        int countRequiredLevel = CaseOpenCountPolicy.requiredLevelForCount(opens);
+        if (userLevel < countRequiredLevel) {
+            throw new CaseOpenCountLevelTooLowException(opens, countRequiredLevel, userLevel);
         }
 
         Wallet wallet = walletRepository.findByUserId(userId)

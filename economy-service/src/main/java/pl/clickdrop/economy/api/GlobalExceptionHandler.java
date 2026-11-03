@@ -57,6 +57,19 @@ public class GlobalExceptionHandler {
                 ));
     }
 
+    @ExceptionHandler(CaseOpenCountLevelTooLowException.class)
+    public ResponseEntity<Map<String, String>> handleCaseOpenCountLevelTooLow(
+            CaseOpenCountLevelTooLowException ex
+    ) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of(
+                        "message", ex.getMessage(),
+                        "requestedCount", String.valueOf(ex.getRequestedCount()),
+                        "requiredLevel", String.valueOf(ex.getRequiredLevel()),
+                        "userLevel", String.valueOf(ex.getUserLevel())
+                ));
+    }
+
     @ExceptionHandler(InventoryItemNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleInventoryNotFound(InventoryItemNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)

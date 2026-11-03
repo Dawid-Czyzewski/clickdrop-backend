@@ -78,9 +78,9 @@ class CaseOpenServiceTest {
     @Test
     void open_x3_opensThree_andChargesTriple() {
         stubHappyPath("200.00");
-        when(authClient.getLevel(15L)).thenReturn(1);
+        when(authClient.getLevel(15L)).thenReturn(5);
         when(authClient.addExperience(15L, 30))
-                .thenReturn(new AuthExperienceResponse(2, 20, 30, true));
+                .thenReturn(new AuthExperienceResponse(5, 20, 30, true));
 
         OpenCasesResponse res = caseOpenService.open(15L, 1L, 3);
 
@@ -108,7 +108,7 @@ class CaseOpenServiceTest {
         Wallet wallet = CaseOpenTestFixtures.wallet(15L, "100.00");
 
         when(gameCaseRepository.findById(1L)).thenReturn(Optional.of(gameCase));
-        when(authClient.getLevel(15L)).thenReturn(1);
+        when(authClient.getLevel(15L)).thenReturn(5);
         when(walletRepository.findByUserId(15L)).thenReturn(Optional.of(wallet));
 
         assertThatThrownBy(() -> caseOpenService.open(15L, 1L, 3))

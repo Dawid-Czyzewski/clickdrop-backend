@@ -45,5 +45,8 @@ class CaseCatalogListTest {
         assertThat(result).hasSize(1);
         assertThat(result.getFirst().minLevel()).isEqualTo(1);
         assertThat(result.getFirst().code()).isEqualTo("CS20_CASE");
+        assertThat(result.getFirst().maxOpenCount()).isEqualTo(5);
+        assertThat(result.getFirst().openX3MinLevel()).isEqualTo(5);
+        assertThat(result.getFirst().openX5MinLevel()).isEqualTo(10);
     }
 }

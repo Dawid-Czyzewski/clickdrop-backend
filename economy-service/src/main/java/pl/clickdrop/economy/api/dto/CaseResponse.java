@@ -8,6 +8,9 @@ public record CaseResponse(
         String displayName,
         BigDecimal price,
         Integer sortOrder,
-        Integer minLevel
+        Integer minLevel,
+        Integer maxOpenCount,
+        Integer openX3MinLevel,
+        Integer openX5MinLevel
 ) {
 }
