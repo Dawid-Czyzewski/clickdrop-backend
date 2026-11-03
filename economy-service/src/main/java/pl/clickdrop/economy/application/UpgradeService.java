@@ -53,7 +53,8 @@ public class UpgradeService {
                 u.getTier(),
                 u.getPrice(),
                 u.getClickPower(),
-                u.getIncomePerSecond()
+                u.getIncomePerSecond(),
+                resolveMinLevel(u)
         );
     }
 
@@ -66,7 +67,12 @@ public class UpgradeService {
                 u.getClickPower(),
                 level,
                 UpgradePricing.nextCost(u.getPrice(), level),
-                u.getIncomePerSecond()
+                u.getIncomePerSecond(),
+                resolveMinLevel(u)
         );
+    }
+
+    private static int resolveMinLevel(Upgrade u) {
+        return u.getMinLevel() == null ? 1 : u.getMinLevel();
     }
 }

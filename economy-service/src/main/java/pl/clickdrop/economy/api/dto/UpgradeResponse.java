@@ -10,6 +10,7 @@ public record UpgradeResponse(
         Integer tier,
         BigDecimal price,
         BigDecimal clickPower,
-        BigDecimal incomePerSecond
+        BigDecimal incomePerSecond,
+        Integer minLevel
 ) {
 }

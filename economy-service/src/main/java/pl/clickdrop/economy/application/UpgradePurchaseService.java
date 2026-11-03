@@ -4,7 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.clickdrop.economy.api.dto.BuyUpgradeResponse;
+import pl.clickdrop.economy.application.client.AuthClient;
 import pl.clickdrop.economy.application.exception.InsufficientFundsException;
+import pl.clickdrop.economy.application.exception.UpgradeLevelTooLowException;
 import pl.clickdrop.economy.application.exception.UpgradeNotFoundException;
 import pl.clickdrop.economy.application.exception.WalletNotFoundException;
 import pl.clickdrop.economy.domain.upgrade.Upgrade;
@@ -23,12 +25,19 @@ public class UpgradePurchaseService {
     private final UpgradeRepository upgradeRepository;
     private final UserUpgradeRepository userUpgradeRepository;
     private final WalletRepository walletRepository;
+    private final AuthClient authClient;
 
     @Transactional
     public BuyUpgradeResponse buy(Long userId, Long upgradeId) {
         Upgrade catalog = upgradeRepository.findById(upgradeId)
                 .filter(Upgrade::isActive)
                 .orElseThrow(() -> new UpgradeNotFoundException(upgradeId));
+
+        int requiredLevel = catalog.getMinLevel() == null ? 1 : catalog.getMinLevel();
+        int userLevel = authClient.getLevel(userId);
+        if (userLevel < requiredLevel) {
+            throw new UpgradeLevelTooLowException(upgradeId, requiredLevel, userLevel);
+        }
 
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new WalletNotFoundException(userId));
@@ -46,7 +55,6 @@ public class UpgradePurchaseService {
 
         wallet.setBalance(wallet.getBalance().subtract(cost));
         userUpgrade.setLevel(currentLevel + 1);
-
 
         walletRepository.save(wallet);
         userUpgradeRepository.save(userUpgrade);

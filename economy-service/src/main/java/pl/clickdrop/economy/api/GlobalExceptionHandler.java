@@ -35,6 +35,16 @@ public class GlobalExceptionHandler {
                 .body(Map.of("message", ex.getMessage()));
     }
 
+    @ExceptionHandler(UpgradeLevelTooLowException.class)
+    public ResponseEntity<Map<String, String>> handleUpgradeLevelTooLow(UpgradeLevelTooLowException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of(
+                        "message", ex.getMessage(),
+                        "requiredLevel", String.valueOf(ex.getRequiredLevel()),
+                        "userLevel", String.valueOf(ex.getUserLevel())
+                ));
+    }
+
     @ExceptionHandler(InsufficientFundsException.class)
     public ResponseEntity<Map<String, String>> handleInsufficientFunds(InsufficientFundsException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)

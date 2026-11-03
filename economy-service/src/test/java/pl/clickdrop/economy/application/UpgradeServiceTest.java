@@ -39,6 +39,7 @@ class UpgradeServiceTest {
         mouse.setName("Better Mouse");
         mouse.setDescription("EN seed text");
         mouse.setTier(1);
+        mouse.setMinLevel(1);
         mouse.setPrice(new BigDecimal("50.00"));
         mouse.setClickPower(new BigDecimal("1.00"));
         mouse.setActive(true);
@@ -52,6 +53,7 @@ class UpgradeServiceTest {
         assertThat(dto.id()).isEqualTo(1L);
         assertThat(dto.code()).isEqualTo("BETTER_MOUSE");
         assertThat(dto.tier()).isEqualTo(1);
+        assertThat(dto.minLevel()).isEqualTo(1);
         assertThat(dto.price()).isEqualByComparingTo("50.00");
         assertThat(dto.clickPower()).isEqualByComparingTo("1.00");
 
@@ -85,6 +87,7 @@ class UpgradeServiceTest {
         MyUpgradeResponse first = result.getFirst();
         assertThat(first.code()).isEqualTo("BETTER_MOUSE");
         assertThat(first.level()).isEqualTo(3);
+        assertThat(first.minLevel()).isEqualTo(1);
         assertThat(first.price()).isEqualByComparingTo("50");
         assertThat(first.clickPower()).isEqualByComparingTo("1");
         assertThat(first.nextCost()).isEqualByComparingTo("200");
@@ -92,6 +95,7 @@ class UpgradeServiceTest {
         MyUpgradeResponse second = result.get(1);
         assertThat(second.code()).isEqualTo("GAMING_MOUSE");
         assertThat(second.level()).isZero();
+        assertThat(second.minLevel()).isEqualTo(5);
         assertThat(second.nextCost()).isEqualByComparingTo("200");
     }
 
@@ -134,6 +138,7 @@ class UpgradeServiceTest {
         u.setId(id);
         u.setCode(code);
         u.setTier(tier);
+        u.setMinLevel(tier == 1 ? 1 : tier == 2 ? 5 : 1);
         u.setPrice(new BigDecimal(price));
         u.setClickPower(new BigDecimal(power));
         u.setActive(true);
