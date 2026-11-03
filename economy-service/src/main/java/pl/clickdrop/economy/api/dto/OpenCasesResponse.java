@@ -11,6 +11,7 @@ public record OpenCasesResponse(
         List<OpenedCaseDropResponse> drops,
         Integer experienceGained,
         Integer level,
-        Integer experience
+        Integer experience,
+        BigDecimal levelUpReward
 ) {
 }

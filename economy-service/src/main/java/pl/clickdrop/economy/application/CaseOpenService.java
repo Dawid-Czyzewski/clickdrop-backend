@@ -105,12 +105,21 @@ public class CaseOpenService {
         }
 
         wallet.setBalance(wallet.getBalance().subtract(totalCost));
-        walletRepository.save(wallet);
 
         AuthExperienceResponse xp = authClient.addExperience(userId, CASE_OPEN_XP * opens);
         if (xp == null) {
             throw new IllegalStateException("Auth experience response was null for userId=" + userId);
         }
+
+        BigDecimal levelUpReward = LevelUpCashReward.forLevelGain(
+                userLevel,
+                xp.level(),
+                xp.leveledUp()
+        );
+        if (levelUpReward.signum() > 0) {
+            wallet.setBalance(wallet.getBalance().add(levelUpReward));
+        }
+        walletRepository.save(wallet);
 
         return new OpenCasesResponse(
                 opens,
@@ -119,7 +128,8 @@ public class CaseOpenService {
                 List.copyOf(opened),
                 xp.experienceGained(),
                 xp.level(),
-                xp.experience()
+                xp.experience(),
+                levelUpReward
         );
     }
 
