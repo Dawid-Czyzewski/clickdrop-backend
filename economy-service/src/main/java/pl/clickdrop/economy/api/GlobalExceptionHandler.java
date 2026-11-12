@@ -144,4 +144,25 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("message", ex.getMessage()));
     }
+
+    @ExceptionHandler(CollectionNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleCollectionNotFound(CollectionNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(CollectionIncompleteException.class)
+    public ResponseEntity<Map<String, String>> handleCollectionIncomplete(CollectionIncompleteException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("message", ex.getMessage(), "code", "COLLECTION_INCOMPLETE"));
+    }
+
+    @ExceptionHandler(CollectionAlreadyClaimedException.class)
+    public ResponseEntity<Map<String, String>> handleCollectionAlreadyClaimed(
+            CollectionAlreadyClaimedException ex
+    ) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("message", ex.getMessage(), "code", "COLLECTION_ALREADY_CLAIMED"));
+    }
 }
+
