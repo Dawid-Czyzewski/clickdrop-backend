@@ -132,4 +132,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("message", ex.getMessage()));
     }
+
+    @ExceptionHandler(TradeUpInvalidException.class)
+    public ResponseEntity<Map<String, String>> handleTradeUpInvalid(TradeUpInvalidException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(TradeUpNoTargetsException.class)
+    public ResponseEntity<Map<String, String>> handleTradeUpNoTargets(TradeUpNoTargetsException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("message", ex.getMessage()));
+    }
 }
