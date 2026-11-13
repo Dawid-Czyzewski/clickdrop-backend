@@ -164,5 +164,24 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(Map.of("message", ex.getMessage(), "code", "COLLECTION_ALREADY_CLAIMED"));
     }
+
+    @ExceptionHandler(InvalidBattleRoundsException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidBattleRounds(InvalidBattleRoundsException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(BattleNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleBattleNotFound(BattleNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(BattleNotJoinableException.class)
+    public ResponseEntity<Map<String, String>> handleBattleNotJoinable(BattleNotJoinableException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("message", ex.getMessage()));
+    }
 }
+
 
