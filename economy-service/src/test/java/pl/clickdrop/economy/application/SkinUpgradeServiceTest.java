@@ -36,6 +36,7 @@ class SkinUpgradeServiceTest {
     @Mock UserInventoryItemRepository inventoryItemRepository;
     @Mock ItemRepository itemRepository;
     @Mock SkinUpgradeRng skinUpgradeRng;
+    @Mock InventoryWearRoller inventoryWearRoller;
 
     @InjectMocks
     SkinUpgradeService skinUpgradeService;
@@ -97,6 +98,8 @@ class SkinUpgradeServiceTest {
         when(itemRepository.findById(1L)).thenReturn(Optional.of(current));
         when(itemRepository.findByActiveTrueOrderByIdAsc()).thenReturn(List.of(current, dearer));
         when(skinUpgradeRng.rollSuccess()).thenReturn(true);
+        when(inventoryWearRoller.roll(ItemExterior.BATTLE_SCARRED))
+                .thenReturn(new InventoryWearRoller.Wear(new BigDecimal("0.550000"), 88));
         when(inventoryItemRepository.save(any(UserInventoryItem.class))).thenAnswer(inv -> {
             UserInventoryItem saved = inv.getArgument(0);
             saved.setId(99L);
@@ -110,6 +113,8 @@ class SkinUpgradeServiceTest {
         assertThat(success.itemCode()).isEqualTo("AK_REDLINE");
         assertThat(success.exterior()).isEqualTo(ItemExterior.BATTLE_SCARRED);
         assertThat(success.statTrack()).isFalse();
+        assertThat(success.floatValue()).isEqualByComparingTo("0.550000");
+        assertThat(success.paintSeed()).isEqualTo(88);
         assertThat(success.suggestedSellPrice()).isEqualByComparingTo("20.00");
 
         ArgumentCaptor<UserInventoryItem> captor = ArgumentCaptor.forClass(UserInventoryItem.class);
@@ -117,6 +122,8 @@ class SkinUpgradeServiceTest {
         assertThat(captor.getValue().getItemId()).isEqualTo(2L);
         assertThat(captor.getValue().getExterior()).isEqualTo(ItemExterior.BATTLE_SCARRED);
         assertThat(captor.getValue().isStatTrack()).isFalse();
+        assertThat(captor.getValue().getFloatValue()).isEqualByComparingTo("0.550000");
+        assertThat(captor.getValue().getPaintSeed()).isEqualTo(88);
         verify(skinUpgradeRng, never()).pickOne(any());
     }
 

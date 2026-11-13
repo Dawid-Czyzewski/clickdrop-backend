@@ -50,6 +50,7 @@ public class DailyRewardService {
     private final WeightedPicker weightedPicker;
     private final ExteriorRoller exteriorRoller;
     private final StatTrackRoller StatTrackRoller;
+    private final InventoryWearRoller inventoryWearRoller;
     private final RecentDropRecorder recentDropRecorder;
 
     @Transactional(readOnly = true)
@@ -120,12 +121,15 @@ public class DailyRewardService {
 
         ItemExterior exterior = exteriorRoller.roll();
         boolean statTrack = StatTrackRoller.roll();
+        InventoryWearRoller.Wear wear = inventoryWearRoller.roll(exterior);
 
         UserInventoryItem inventoryItem = new UserInventoryItem();
         inventoryItem.setUserId(userId);
         inventoryItem.setItemId(item.getId());
         inventoryItem.setExterior(exterior);
         inventoryItem.setStatTrack(statTrack);
+        inventoryItem.setFloatValue(wear.floatValue());
+        inventoryItem.setPaintSeed(wear.paintSeed());
         inventoryItem = userInventoryItemRepository.save(inventoryItem);
 
         recentDropRecorder.record(userId, item, exterior, statTrack, RecentDropSource.DAILY, null, null);
@@ -137,6 +141,8 @@ public class DailyRewardService {
                 item.getRarity(),
                 exterior,
                 statTrack,
+                wear.floatValue(),
+                wear.paintSeed(),
                 SellPricing.sellPrice(item.getRarity(), exterior, statTrack),
                 nextClaimAt
         );

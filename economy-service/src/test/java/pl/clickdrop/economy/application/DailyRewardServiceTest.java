@@ -28,6 +28,7 @@ import pl.clickdrop.economy.domain.item.ItemRepository;
 import pl.clickdrop.economy.domain.wallet.Wallet;
 import pl.clickdrop.economy.domain.wallet.WalletRepository;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -51,6 +52,8 @@ class DailyRewardServiceTest {
     @Mock WeightedPicker weightedPicker;
     @Mock ExteriorRoller exteriorRoller;
     @Mock StatTrackRoller StatTrackRoller;
+    @Mock InventoryWearRoller inventoryWearRoller;
+    @Mock RecentDropRecorder recentDropRecorder;
 
     @InjectMocks
     DailyRewardService dailyRewardService;
@@ -101,6 +104,8 @@ class DailyRewardServiceTest {
         when(itemRepository.findById(3L)).thenReturn(Optional.of(item));
         when(exteriorRoller.roll()).thenReturn(ItemExterior.FIELD_TESTED);
         when(StatTrackRoller.roll()).thenReturn(false);
+        when(inventoryWearRoller.roll(ItemExterior.FIELD_TESTED))
+                .thenReturn(new InventoryWearRoller.Wear(new BigDecimal("0.250000"), 55));
         when(userInventoryItemRepository.save(any(UserInventoryItem.class))).thenAnswer(inv -> {
             UserInventoryItem row = inv.getArgument(0);
             row.setId(99L);
@@ -114,6 +119,8 @@ class DailyRewardServiceTest {
         assertThat(skin.inventoryItemId()).isEqualTo(99L);
         assertThat(skin.itemCode()).isEqualTo("AK_REDLINE");
         assertThat(skin.statTrack()).isFalse();
+        assertThat(skin.floatValue()).isEqualByComparingTo("0.250000");
+        assertThat(skin.paintSeed()).isEqualTo(55);
         assertThat(skin.suggestedSellPrice()).isEqualByComparingTo("40.00");
         verify(walletRepository, never()).save(any());
         verify(dailyClaimRepository).save(any());
@@ -164,6 +171,9 @@ class DailyRewardServiceTest {
         when(weightedPicker.pick(anyList(), any())).thenReturn(drop);
         when(itemRepository.findById(3L)).thenReturn(Optional.of(item(3L, "USP_GUARDIAN", ItemRarity.MIL_SPEC)));
         when(exteriorRoller.roll()).thenReturn(ItemExterior.MINIMAL_WEAR);
+        when(StatTrackRoller.roll()).thenReturn(false);
+        when(inventoryWearRoller.roll(ItemExterior.MINIMAL_WEAR))
+                .thenReturn(new InventoryWearRoller.Wear(new BigDecimal("0.100000"), 12));
         when(userInventoryItemRepository.save(any(UserInventoryItem.class))).thenAnswer(inv -> {
             UserInventoryItem row = inv.getArgument(0);
             row.setId(100L);

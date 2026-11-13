@@ -18,12 +18,15 @@ public class BattleDropRoller {
     private final WeightedPicker weightedPicker;
     private final ExteriorRoller exteriorRoller;
     private final StatTrackRoller statTrackRoller;
+    private final InventoryWearRoller inventoryWearRoller;
 
     public record RolledDrop(
             Long itemId,
             Item item,
             ItemExterior exterior,
             boolean statTrack,
+            BigDecimal floatValue,
+            int paintSeed,
             BigDecimal value
     ) {}
 
@@ -39,7 +42,16 @@ public class BattleDropRoller {
         }
         ItemExterior exterior = exteriorRoller.roll();
         boolean statTrack = statTrackRoller.roll();
+        InventoryWearRoller.Wear wear = inventoryWearRoller.roll(exterior);
         BigDecimal value = SellPricing.sellPrice(item.getRarity(), exterior, statTrack);
-        return new RolledDrop(item.getId(), item, exterior, statTrack, value);
+        return new RolledDrop(
+                item.getId(),
+                item,
+                exterior,
+                statTrack,
+                wear.floatValue(),
+                wear.paintSeed(),
+                value
+        );
     }
 }

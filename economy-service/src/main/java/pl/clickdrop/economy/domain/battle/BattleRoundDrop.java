@@ -38,6 +38,12 @@ public class BattleRoundDrop {
     @Column(name = "drop_value", nullable = false, precision = 19, scale = 2)
     private BigDecimal dropValue;
 
+    @Column(name = "float_value", precision = 8, scale = 6)
+    private BigDecimal floatValue;
+
+    @Column(name = "paint_seed")
+    private Integer paintSeed;
+
     @Column(name = "inventory_item_id")
     private Long inventoryItemId;
 }

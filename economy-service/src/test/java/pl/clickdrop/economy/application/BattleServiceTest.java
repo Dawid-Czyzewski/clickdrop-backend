@@ -102,9 +102,11 @@ class BattleServiceTest {
         when(itemRepository.findAllById(anyList())).thenReturn(List.of(item));
 
         var high = new BattleDropRoller.RolledDrop(
-                10L, item, ItemExterior.FACTORY_NEW, false, new BigDecimal("40.00"));
+                10L, item, ItemExterior.FACTORY_NEW, false,
+                new BigDecimal("0.030000"), 42, new BigDecimal("40.00"));
         var low = new BattleDropRoller.RolledDrop(
-                10L, item, ItemExterior.BATTLE_SCARRED, false, new BigDecimal("10.00"));
+                10L, item, ItemExterior.BATTLE_SCARRED, false,
+                new BigDecimal("0.700000"), 99, new BigDecimal("10.00"));
         when(battleDropRoller.roll(any(), anyList(), any())).thenReturn(high, low);
 
         AtomicLong invIds = new AtomicLong(100);
@@ -128,7 +130,10 @@ class BattleServiceTest {
 
         ArgumentCaptor<UserInventoryItem> invCaptor = ArgumentCaptor.forClass(UserInventoryItem.class);
         verify(inventoryItemRepository, atLeastOnce()).save(invCaptor.capture());
-        assertThat(invCaptor.getAllValues()).allMatch(row -> USER.equals(row.getUserId()));
+        assertThat(invCaptor.getAllValues()).allMatch(row ->
+                USER.equals(row.getUserId())
+                        && row.getFloatValue() != null
+                        && row.getPaintSeed() != null);
     }
 
     @Test
@@ -165,6 +170,8 @@ class BattleServiceTest {
                         ItemRarity.MIL_SPEC,
                         d.getExterior(),
                         d.isStatTrack(),
+                        d.getFloatValue(),
+                        d.getPaintSeed(),
                         d.getDropValue(),
                         d.getInventoryItemId()
                 )).toList()

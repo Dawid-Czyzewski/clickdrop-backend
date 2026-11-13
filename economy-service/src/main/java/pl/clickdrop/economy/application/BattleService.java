@@ -134,6 +134,8 @@ public class BattleService {
             inv.setItemId(drop.getItemId());
             inv.setExterior(drop.getExterior());
             inv.setStatTrack(drop.isStatTrack());
+            inv.setFloatValue(drop.getFloatValue());
+            inv.setPaintSeed(drop.getPaintSeed());
             inv = inventoryItemRepository.save(inv);
             drop.setInventoryItemId(inv.getId());
         }
@@ -182,6 +184,8 @@ public class BattleService {
         drop.setItemId(rolled.itemId());
         drop.setExterior(rolled.exterior());
         drop.setStatTrack(rolled.statTrack());
+        drop.setFloatValue(rolled.floatValue());
+        drop.setPaintSeed(rolled.paintSeed());
         drop.setDropValue(rolled.value());
         return drop;
     }

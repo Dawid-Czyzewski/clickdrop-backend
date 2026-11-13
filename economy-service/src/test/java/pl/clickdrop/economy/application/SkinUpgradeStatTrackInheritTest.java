@@ -17,6 +17,7 @@ import pl.clickdrop.economy.domain.item.ItemExterior;
 import pl.clickdrop.economy.domain.item.ItemRarity;
 import pl.clickdrop.economy.domain.item.ItemRepository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,6 +32,7 @@ class SkinUpgradeStatTrackInheritTest {
     @Mock UserInventoryItemRepository inventoryItemRepository;
     @Mock ItemRepository itemRepository;
     @Mock SkinUpgradeRng skinUpgradeRng;
+    @Mock InventoryWearRoller inventoryWearRoller;
 
     @InjectMocks
     SkinUpgradeService skinUpgradeService;
@@ -74,6 +76,8 @@ class SkinUpgradeStatTrackInheritTest {
         when(itemRepository.findById(1L)).thenReturn(Optional.of(current));
         when(itemRepository.findByActiveTrueOrderByIdAsc()).thenReturn(List.of(current, dearer));
         when(skinUpgradeRng.rollSuccess()).thenReturn(true);
+        when(inventoryWearRoller.roll(ItemExterior.BATTLE_SCARRED))
+                .thenReturn(new InventoryWearRoller.Wear(new BigDecimal("0.550000"), 9));
         when(inventoryItemRepository.save(any(UserInventoryItem.class))).thenAnswer(inv -> {
             UserInventoryItem saved = inv.getArgument(0);
             saved.setId(99L);
@@ -85,6 +89,8 @@ class SkinUpgradeStatTrackInheritTest {
         assertThat(result).isInstanceOf(SkinUpgradeSuccessResponse.class);
         SkinUpgradeSuccessResponse success = (SkinUpgradeSuccessResponse) result;
         assertThat(success.statTrack()).isTrue();
+        assertThat(success.floatValue()).isEqualByComparingTo("0.550000");
+        assertThat(success.paintSeed()).isEqualTo(9);
         assertThat(success.suggestedSellPrice()).isEqualByComparingTo(
                 SellPricing.sellPrice(ItemRarity.RESTRICTED, ItemExterior.BATTLE_SCARRED, true));
 

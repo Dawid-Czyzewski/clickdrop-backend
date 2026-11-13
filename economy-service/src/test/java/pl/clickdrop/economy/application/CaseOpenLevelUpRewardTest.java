@@ -41,6 +41,7 @@ class CaseOpenLevelUpRewardTest {
     @Mock WeightedPicker weightedPicker;
     @Mock ExteriorRoller exteriorRoller;
     @Mock StatTrackRoller StatTrackRoller;
+    @Mock InventoryWearRoller inventoryWearRoller;
     @Mock CaseOpenRateLimiter caseOpenRateLimiter;
     @Mock AuthClient authClient;
     @Mock RecentDropRecorder recentDropRecorder;
@@ -115,6 +116,8 @@ class CaseOpenLevelUpRewardTest {
         when(weightedPicker.pick(anyList(), any())).thenReturn(drop);
         when(exteriorRoller.roll()).thenReturn(ItemExterior.FIELD_TESTED);
         when(StatTrackRoller.roll()).thenReturn(false);
+        when(inventoryWearRoller.roll(ItemExterior.FIELD_TESTED))
+                .thenReturn(new InventoryWearRoller.Wear(new BigDecimal("0.250000"), 123));
         when(walletRepository.save(any(Wallet.class))).thenAnswer(i -> i.getArgument(0));
         when(inventoryItemRepository.save(any(UserInventoryItem.class))).thenAnswer(i -> {
             UserInventoryItem row = i.getArgument(0);

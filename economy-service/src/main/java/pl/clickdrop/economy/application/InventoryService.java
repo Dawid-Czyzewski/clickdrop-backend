@@ -57,6 +57,8 @@ public class InventoryService {
                             item.getRarity(),
                             row.getExterior(),
                             row.isStatTrack(),
+                            row.getFloatValue(),
+                            row.getPaintSeed(),
                             SellPricing.sellPrice(item.getRarity(), row.getExterior(), row.isStatTrack()),
                             row.getCreatedAt()
                     );

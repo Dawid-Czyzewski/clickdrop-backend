@@ -18,6 +18,7 @@ import pl.clickdrop.economy.domain.item.ItemExterior;
 import pl.clickdrop.economy.domain.item.ItemRarity;
 import pl.clickdrop.economy.domain.item.ItemRepository;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.LongStream;
@@ -37,6 +38,7 @@ class TradeUpServiceTest {
     @Mock UserInventoryItemRepository inventoryItemRepository;
     @Mock ItemRepository itemRepository;
     @Mock TradeUpRng tradeUpRng;
+    @Mock InventoryWearRoller inventoryWearRoller;
 
     @InjectMocks
     TradeUpService tradeUpService;
@@ -52,6 +54,8 @@ class TradeUpServiceTest {
         when(itemRepository.findAllById(anyList())).thenReturn(List.of(milSpec));
         when(itemRepository.findByActiveTrueOrderByIdAsc()).thenReturn(List.of(milSpec, restricted));
         when(tradeUpRng.pickOne(List.of(restricted))).thenReturn(restricted);
+        when(inventoryWearRoller.roll(ItemExterior.FIELD_TESTED))
+                .thenReturn(new InventoryWearRoller.Wear(new BigDecimal("0.250000"), 77));
         when(inventoryItemRepository.save(any(UserInventoryItem.class))).thenAnswer(inv -> {
             UserInventoryItem saved = inv.getArgument(0);
             saved.setId(99L);
@@ -65,6 +69,8 @@ class TradeUpServiceTest {
         assertThat(result.rarity()).isEqualTo(ItemRarity.RESTRICTED);
         assertThat(result.exterior()).isEqualTo(ItemExterior.FIELD_TESTED);
         assertThat(result.statTrack()).isFalse();
+        assertThat(result.floatValue()).isEqualByComparingTo("0.250000");
+        assertThat(result.paintSeed()).isEqualTo(77);
         assertThat(result.suggestedSellPrice()).isEqualByComparingTo("40.00");
 
         verify(inventoryItemRepository).deleteAll(rows);
@@ -72,6 +78,8 @@ class TradeUpServiceTest {
         verify(inventoryItemRepository).save(captor.capture());
         assertThat(captor.getValue().getItemId()).isEqualTo(2L);
         assertThat(captor.getValue().isStatTrack()).isFalse();
+        assertThat(captor.getValue().getFloatValue()).isEqualByComparingTo("0.250000");
+        assertThat(captor.getValue().getPaintSeed()).isEqualTo(77);
     }
 
     @Test
@@ -85,6 +93,8 @@ class TradeUpServiceTest {
         when(itemRepository.findAllById(anyList())).thenReturn(List.of(milSpec));
         when(itemRepository.findByActiveTrueOrderByIdAsc()).thenReturn(List.of(milSpec, restricted));
         when(tradeUpRng.pickOne(List.of(restricted))).thenReturn(restricted);
+        when(inventoryWearRoller.roll(ItemExterior.MINIMAL_WEAR))
+                .thenReturn(new InventoryWearRoller.Wear(new BigDecimal("0.100000"), 11));
         when(inventoryItemRepository.save(any(UserInventoryItem.class))).thenAnswer(inv -> {
             UserInventoryItem saved = inv.getArgument(0);
             saved.setId(100L);
@@ -95,6 +105,8 @@ class TradeUpServiceTest {
 
         assertThat(result.statTrack()).isTrue();
         assertThat(result.exterior()).isEqualTo(ItemExterior.MINIMAL_WEAR);
+        assertThat(result.floatValue()).isEqualByComparingTo("0.100000");
+        assertThat(result.paintSeed()).isEqualTo(11);
         assertThat(result.suggestedSellPrice()).isEqualByComparingTo("60.00");
     }
 

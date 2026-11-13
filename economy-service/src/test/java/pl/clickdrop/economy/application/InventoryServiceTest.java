@@ -62,6 +62,8 @@ class InventoryServiceTest {
         assertThat(dto.rarity()).isEqualTo(ItemRarity.RESTRICTED);
         assertThat(dto.exterior()).isEqualTo(ItemExterior.FIELD_TESTED);
         assertThat(dto.statTrack()).isFalse();
+        assertThat(dto.floatValue()).isEqualByComparingTo("0.250000");
+        assertThat(dto.paintSeed()).isEqualTo(321);
         assertThat(dto.suggestedSellPrice()).isEqualByComparingTo("40.00");
     }
 
@@ -199,6 +201,8 @@ class InventoryServiceTest {
         row.setUserId(userId);
         row.setItemId(itemId);
         row.setExterior(exterior);
+        row.setFloatValue(new BigDecimal("0.250000"));
+        row.setPaintSeed(321);
         row.setCreatedAt(Instant.parse("2026-01-01T00:00:00Z"));
         return row;
     }

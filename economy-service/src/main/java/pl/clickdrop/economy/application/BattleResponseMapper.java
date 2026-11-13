@@ -36,6 +36,8 @@ public class BattleResponseMapper {
                     item != null ? item.getRarity() : null,
                     drop.getExterior(),
                     drop.isStatTrack(),
+                    drop.getFloatValue(),
+                    drop.getPaintSeed(),
                     drop.getDropValue(),
                     drop.getInventoryItemId()
             );

@@ -13,5 +13,7 @@ public record TradeUpResponse(
         ItemRarity rarity,
         ItemExterior exterior,
         boolean statTrack,
+        BigDecimal floatValue,
+        Integer paintSeed,
         BigDecimal suggestedSellPrice
 ) {}

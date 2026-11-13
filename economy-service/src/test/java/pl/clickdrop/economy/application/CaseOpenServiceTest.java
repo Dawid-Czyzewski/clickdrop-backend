@@ -2,6 +2,7 @@ package pl.clickdrop.economy.application;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -26,6 +27,7 @@ import pl.clickdrop.economy.domain.item.ItemRepository;
 import pl.clickdrop.economy.domain.wallet.Wallet;
 import pl.clickdrop.economy.domain.wallet.WalletRepository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
@@ -47,6 +49,7 @@ class CaseOpenServiceTest {
     @Mock WeightedPicker weightedPicker;
     @Mock ExteriorRoller exteriorRoller;
     @Mock StatTrackRoller StatTrackRoller;
+    @Mock InventoryWearRoller inventoryWearRoller;
     @Mock CaseOpenRateLimiter caseOpenRateLimiter;
     @Mock AuthClient authClient;
     @Mock RecentDropRecorder recentDropRecorder;
@@ -67,9 +70,14 @@ class CaseOpenServiceTest {
         assertThat(res.totalCost()).isEqualByComparingTo("50.00");
         assertThat(res.balance()).isEqualByComparingTo("50.00");
         assertThat(res.drops()).hasSize(1);
+        assertThat(res.drops().getFirst().floatValue()).isEqualByComparingTo("0.250000");
+        assertThat(res.drops().getFirst().paintSeed()).isEqualTo(123);
         assertThat(res.experienceGained()).isEqualTo(10);
 
-        verify(inventoryItemRepository, times(1)).save(any());
+        ArgumentCaptor<UserInventoryItem> invCaptor = ArgumentCaptor.forClass(UserInventoryItem.class);
+        verify(inventoryItemRepository, times(1)).save(invCaptor.capture());
+        assertThat(invCaptor.getValue().getFloatValue()).isEqualByComparingTo("0.250000");
+        assertThat(invCaptor.getValue().getPaintSeed()).isEqualTo(123);
         verify(authClient).getLevel(15L);
         verify(authClient).addExperience(15L, 10);
         verify(caseOpenRateLimiter).check(15L);
@@ -174,6 +182,8 @@ class CaseOpenServiceTest {
         when(weightedPicker.pick(anyList(), any())).thenReturn(drop);
         when(exteriorRoller.roll()).thenReturn(ItemExterior.FIELD_TESTED);
         when(StatTrackRoller.roll()).thenReturn(false);
+        when(inventoryWearRoller.roll(ItemExterior.FIELD_TESTED))
+                .thenReturn(new InventoryWearRoller.Wear(new BigDecimal("0.250000"), 123));
         when(walletRepository.save(any(Wallet.class))).thenAnswer(i -> i.getArgument(0));
         when(inventoryItemRepository.save(any(UserInventoryItem.class))).thenAnswer(i -> {
             UserInventoryItem row = i.getArgument(0);

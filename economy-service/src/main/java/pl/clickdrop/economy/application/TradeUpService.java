@@ -29,6 +29,7 @@ public class TradeUpService {
     private final UserInventoryItemRepository inventoryItemRepository;
     private final ItemRepository itemRepository;
     private final TradeUpRng tradeUpRng;
+    private final InventoryWearRoller inventoryWearRoller;
 
     @Transactional
     public TradeUpResponse tradeUp(Long userId, TradeUpRequest request) {
@@ -60,11 +61,15 @@ public class TradeUpService {
 
         inventoryItemRepository.deleteAll(rows);
 
+        InventoryWearRoller.Wear wear = inventoryWearRoller.roll(exterior);
+
         UserInventoryItem created = new UserInventoryItem();
         created.setUserId(userId);
         created.setItemId(chosen.getId());
         created.setExterior(exterior);
         created.setStatTrack(statTrack);
+        created.setFloatValue(wear.floatValue());
+        created.setPaintSeed(wear.paintSeed());
         created = inventoryItemRepository.save(created);
 
         return new TradeUpResponse(
@@ -75,6 +80,8 @@ public class TradeUpService {
                 chosen.getRarity(),
                 exterior,
                 statTrack,
+                wear.floatValue(),
+                wear.paintSeed(),
                 SellPricing.sellPrice(chosen.getRarity(), exterior, statTrack)
         );
     }

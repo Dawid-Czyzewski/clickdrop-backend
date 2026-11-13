@@ -5,6 +5,7 @@ import lombok.Data;
 import pl.clickdrop.economy.domain.item.Item;
 import pl.clickdrop.economy.domain.item.ItemExterior;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 @Data
@@ -28,6 +29,12 @@ public class UserInventoryItem {
 
     @Column(name = "stat_track", nullable = false)
     private boolean statTrack = false;
+
+    @Column(name = "float_value", nullable = false, precision = 8, scale = 6)
+    private BigDecimal floatValue;
+
+    @Column(name = "paint_seed", nullable = false)
+    private Integer paintSeed;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

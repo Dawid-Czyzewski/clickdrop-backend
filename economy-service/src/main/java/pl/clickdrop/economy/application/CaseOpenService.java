@@ -52,6 +52,7 @@ public class CaseOpenService {
     private final WeightedPicker weightedPicker;
     private final ExteriorRoller exteriorRoller;
     private final StatTrackRoller StatTrackRoller;
+    private final InventoryWearRoller inventoryWearRoller;
     private final CaseOpenRateLimiter caseOpenRateLimiter;
     private final AuthClient authClient;
     private final RecentDropRecorder recentDropRecorder;
@@ -148,12 +149,15 @@ public class CaseOpenService {
 
         ItemExterior exterior = exteriorRoller.roll();
         boolean statTrack = StatTrackRoller.roll();
+        InventoryWearRoller.Wear wear = inventoryWearRoller.roll(exterior);
 
         UserInventoryItem inventoryItem = new UserInventoryItem();
         inventoryItem.setUserId(userId);
         inventoryItem.setItemId(item.getId());
         inventoryItem.setExterior(exterior);
         inventoryItem.setStatTrack(statTrack);
+        inventoryItem.setFloatValue(wear.floatValue());
+        inventoryItem.setPaintSeed(wear.paintSeed());
         inventoryItem = inventoryItemRepository.save(inventoryItem);
 
         recentDropRecorder.record(
@@ -173,6 +177,8 @@ public class CaseOpenService {
                 item.getRarity(),
                 exterior,
                 statTrack,
+                wear.floatValue(),
+                wear.paintSeed(),
                 SellPricing.sellPrice(item.getRarity(), exterior, statTrack)
         );
     }

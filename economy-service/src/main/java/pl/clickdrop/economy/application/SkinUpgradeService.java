@@ -28,6 +28,7 @@ public class SkinUpgradeService {
     private final UserInventoryItemRepository userInventoryItemRepository;
     private final ItemRepository itemRepository;
     private final SkinUpgradeRng skinUpgradeRng;
+    private final InventoryWearRoller inventoryWearRoller;
 
     @Transactional(readOnly = true)
     public SkinUpgradePreviewResponse preview(Long userId, Long inventoryItemId) {
@@ -83,11 +84,15 @@ public class SkinUpgradeService {
         BigDecimal price = SellPricing.sellPrice(
                 chosen.item().getRarity(), chosen.exterior(), statTrack);
 
+        InventoryWearRoller.Wear wear = inventoryWearRoller.roll(chosen.exterior());
+
         UserInventoryItem upgraded = new UserInventoryItem();
         upgraded.setUserId(userId);
         upgraded.setItemId(chosen.item().getId());
         upgraded.setExterior(chosen.exterior());
         upgraded.setStatTrack(statTrack);
+        upgraded.setFloatValue(wear.floatValue());
+        upgraded.setPaintSeed(wear.paintSeed());
         upgraded = userInventoryItemRepository.save(upgraded);
 
         return new SkinUpgradeSuccessResponse(
@@ -97,6 +102,8 @@ public class SkinUpgradeService {
                 chosen.item().getRarity(),
                 chosen.exterior(),
                 statTrack,
+                wear.floatValue(),
+                wear.paintSeed(),
                 price
         );
     }
