@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: api-gateway
+
+server:
+  port: 8080
+
+app:
+  services:
+    auth: "http://localhost:8081"
+    economy: "http://localhost:8082"
+    inventory: "http://localhost:8083"

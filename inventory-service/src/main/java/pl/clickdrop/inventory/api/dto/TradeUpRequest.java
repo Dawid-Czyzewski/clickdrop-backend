@@ -1,0 +1,7 @@
+package pl.clickdrop.inventory.api.dto;
+
+import java.util.List;
+
+public record TradeUpRequest(
+        List<Long> inventoryItemIds
+) {}

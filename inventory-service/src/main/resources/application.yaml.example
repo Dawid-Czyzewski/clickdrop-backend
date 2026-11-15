@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: inventory-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/clickdrop_economy
+    username: postgres
+    password: CHANGE_ME
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: false
+
+app:
+  jwt:
+    secret: "change-me-to-a-long-secret-at-least-32-chars!!"
+
+server:
+  port: 8083

@@ -1,12 +1,12 @@
-package pl.clickdrop.economy.api;
+package pl.clickdrop.inventory.api;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import pl.clickdrop.economy.api.dto.*;
-import pl.clickdrop.economy.application.InventoryService;
-import pl.clickdrop.economy.application.SkinUpgradeService;
+import pl.clickdrop.inventory.api.dto.*;
+import pl.clickdrop.inventory.application.InventoryService;
+import pl.clickdrop.inventory.application.SkinUpgradeService;
 
 import java.util.List;
 
