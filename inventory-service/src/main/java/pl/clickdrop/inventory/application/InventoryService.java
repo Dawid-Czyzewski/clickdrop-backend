@@ -82,6 +82,7 @@ public class InventoryService {
         return new SellInventoryItemResponse(wallet.getBalance(), soldFor);
     }
 
+    @Transactional
     public SellInventoryBatchResponse sellBatch(Long userId, SellInventoryBatchRequest request) {
         List<Long> ids = validatedUniqueIds(request);
 

@@ -1,9 +1,9 @@
-package pl.clickdrop.economy.application;
+package pl.clickdrop.inventory.application;
 
-import pl.clickdrop.economy.domain.inventory.UserInventoryItem;
-import pl.clickdrop.economy.domain.item.Item;
-import pl.clickdrop.economy.domain.item.ItemExterior;
-import pl.clickdrop.economy.domain.item.ItemRarity;
+import pl.clickdrop.inventory.domain.inventory.UserInventoryItem;
+import pl.clickdrop.inventory.domain.item.Item;
+import pl.clickdrop.inventory.domain.item.ItemExterior;
+import pl.clickdrop.inventory.domain.item.ItemRarity;
 
 final class SkinUpgradeTestFixtures {
 

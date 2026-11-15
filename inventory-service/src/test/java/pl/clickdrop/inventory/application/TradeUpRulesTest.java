@@ -1,9 +1,9 @@
-package pl.clickdrop.economy.application;
+package pl.clickdrop.inventory.application;
 
 import org.junit.jupiter.api.Test;
-import pl.clickdrop.economy.application.exception.TradeUpInvalidException;
-import pl.clickdrop.economy.domain.item.ItemExterior;
-import pl.clickdrop.economy.domain.item.ItemRarity;
+import pl.clickdrop.inventory.application.exception.TradeUpInvalidException;
+import pl.clickdrop.inventory.domain.item.ItemExterior;
+import pl.clickdrop.inventory.domain.item.ItemRarity;
 
 import java.util.Collections;
 import java.util.List;

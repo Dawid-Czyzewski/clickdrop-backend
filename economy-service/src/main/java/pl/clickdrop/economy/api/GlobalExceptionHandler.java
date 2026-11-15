@@ -80,12 +80,6 @@ public class GlobalExceptionHandler {
                 ));
     }
 
-    @ExceptionHandler(InventoryItemNotFoundException.class)
-    public ResponseEntity<Map<String, String>> handleInventoryNotFound(InventoryItemNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("message", ex.getMessage()));
-    }
-
     @ExceptionHandler(CaseDropPoolEmptyException.class)
     public ResponseEntity<Map<String, String>> handleEmptyPool(CaseDropPoolEmptyException ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -107,40 +101,10 @@ public class GlobalExceptionHandler {
                 .body(Map.of("message", ex.getMessage()));
     }
 
-    @ExceptionHandler(SkinUpgradeNoTargetsException.class)
-    public ResponseEntity<Map<String, String>> handleNoTargets(SkinUpgradeNoTargetsException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("message", ex.getMessage()));
-    }
-
-    @ExceptionHandler(SkinUpgradeInvalidTargetException.class)
-    public ResponseEntity<Map<String, String>> handleInvalidTarget(SkinUpgradeInvalidTargetException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("message", ex.getMessage()));
-    }
-
-    @ExceptionHandler(InvalidSellBatchException.class)
-    public ResponseEntity<Map<String, String>> handleInvalidSellBatch(InvalidSellBatchException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("message", ex.getMessage()));
-    }
-
     @ExceptionHandler(InvalidCaseOpenCountException.class)
     public ResponseEntity<Map<String, String>> handleInvalidCaseOpenCount(
             InvalidCaseOpenCountException ex
     ) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("message", ex.getMessage()));
-    }
-
-    @ExceptionHandler(TradeUpInvalidException.class)
-    public ResponseEntity<Map<String, String>> handleTradeUpInvalid(TradeUpInvalidException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("message", ex.getMessage()));
-    }
-
-    @ExceptionHandler(TradeUpNoTargetsException.class)
-    public ResponseEntity<Map<String, String>> handleTradeUpNoTargets(TradeUpNoTargetsException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("message", ex.getMessage()));
     }
